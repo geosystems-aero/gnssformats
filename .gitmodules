@@ -1,0 +1,3 @@
+[submodule "GNSS"]
+	path = GNSS
+	url = git@github.com:geosystems-aero/GNSS

@@ -1,0 +1,6 @@
+# Created by .ignore support plugin (hsz.mobi)
+### JetBrains template
+target
+/.idea/workspace.xml
+/.idea/libraries/Maven_*.xml
+/.idea/inspectionProfiles/Project_Default.xml

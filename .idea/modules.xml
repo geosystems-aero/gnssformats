@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/GNSS/GNSS.iml" filepath="$PROJECT_DIR$/GNSS/GNSS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/core/core.iml" filepath="$PROJECT_DIR$/core/core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/gnssformats.iml" filepath="$PROJECT_DIR$/gnssformats.iml" />
+      <module fileurl="file://$PROJECT_DIR$/format/rtcm3/rtcm3.iml" filepath="$PROJECT_DIR$/format/rtcm3/rtcm3.iml" />
+    </modules>
+  </component>
+</project>

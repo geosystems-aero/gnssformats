@@ -38,24 +38,26 @@ abstract class RtcmCommon_1001_1004<SB:RtcmSatCommon_1001_1004>(def: RtcmCommonD
 }
 
 abstract class RtcmSatCommonDef_1001_1004<SB : RtcmSatCommon_1001_1004>(val hasamb: Boolean, val hasL2: Boolean) : Rtcm3StructDef<SB>() {
+	val hascnr = hasamb
 	val sat_id_def = DF009()
 	val l1code_ind_def = DF010()
 	val l1psr_def = DF011()
 	val l1phrl1psr_def = DF012()
 	val l1locktime_def = DF013()
 	val l1psr_amb_def = if (hasamb) DF014() else null
-	val l1cnr_def = if (hasamb) DF015() else null
+	val l1cnr_def = if (hascnr) DF015() else null
 	val l2code_ind_def = if (hasL2) DF016() else null
 	val l2l1psrdiff_def = if (hasL2) DF017() else null
 	val l2phrl1psr_def = if (hasL2) DF018() else null
 	val l2locktime_def = if (hasL2) DF019() else null
-	val l2cnr_def = if (hasL2) DF020() else null
+	val l2cnr_def = if (hascnr && hasL2) DF020() else null
 }
 
 abstract class RtcmSatCommon_1001_1004(def: RtcmSatCommonDef_1001_1004<*>, bb: ByteBuffer, offset: Int) :
 		StructBinding(def, bb, offset) {
 	val hasL2 = def.hasL2
 	val hasamb = def.hasamb
+	val hascnr = def.hascnr
 
 	var sat_id: Int by def.sat_id_def
 	var l1code_ind: Int by def.l1code_ind_def

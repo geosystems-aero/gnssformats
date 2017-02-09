@@ -2,8 +2,10 @@ package aero.geosystems.formats.rtcm3
 
 import aero.geosystems.formats.AbstractGnssDecoder
 import aero.geosystems.formats.IGnssDataConsumer
+import aero.geosystems.formats.rtcm3.messages.GloMsmEpoch
 import aero.geosystems.formats.rtcm3.messages.RtcmCommon_1001_1004
 import aero.geosystems.formats.rtcm3.messages.RtcmCommon_1009_1012
+import aero.geosystems.formats.rtcm3.messages.RtcmMsmCommon
 import aero.geosystems.gnss.gloms2gpstime
 import aero.geosystems.gnss.gpstimeWithGuessedWeeks
 import java.nio.ByteBuffer
@@ -52,6 +54,10 @@ class Rtcm3Decoder(sink: IGnssDataConsumer<Rtcm3Message>,
 				(message as RtcmCommon_1001_1004<*>).gps_epoch.gpstimeWithGuessedWeeks(refGpsTime)
 			1009,1010,1011,1012 ->
 				(message as RtcmCommon_1009_1012).glo_epoch.toLong().gloms2gpstime(refGpsTime)
+			1071,1072,1073,1074,1075,1076,1077 ->
+				((message as RtcmMsmCommon<*,*>).gnss_epoch as Long).gpstimeWithGuessedWeeks(refGpsTime)
+			1081,1082,1083,1084,1085,1086,1087 ->
+				((message as RtcmMsmCommon<*,*>).gnss_epoch as GloMsmEpoch).epochTime.gloms2gpstime(refGpsTime)
 			else -> null
 		}
 		if (gpstime != null) refGpsTime = gpstime

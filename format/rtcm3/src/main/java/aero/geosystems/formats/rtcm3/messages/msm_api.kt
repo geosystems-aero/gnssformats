@@ -110,16 +110,16 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 			val cnr: Double?,
 			val phr_rate_fine: Double?
 	) {
+		val psr_rough_m = ((psr_rough_cms?:0) + psr_rough_mod)* LIGHTMS
+		val psr_m = psr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
+		val phr_m = phr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
 		override fun toString(): String {
-			val psr_rough_m = ((psr_rough_cms?:0) + psr_rough_mod)* LIGHTMS
-			val psr_m = psr_rough_m + (psr_fine?.times(LIGHTMS)?:0.0)
-			val phr_m = phr_fine?.times(LIGHTMS)?.plus(psr_rough_m)?:0.0
 			return "[$cellIndex]${gnss.charCode}$satCode,$sigCode" +
 					(ext_sat_info?.formatAs(",xsi=%d") ?: "") +
 					",psr=" + psr_rough_mod.times(LIGHTMS).formatAs("%.3f") +
 					(psr_rough_cms?.times(LIGHTMS)?.formatAs("%+.3f") ?: "") +
 					(psr_fine?.times(LIGHTMS)?.formatAs("%+.4f")?:"") +
-					psr_m.formatAs("=%.4fm")+
+					(psr_m?.formatAs("=%.4fm")?:"")+
 					(phr_fine?.times(LIGHTMS)?.formatAs(",phr=psr%+.4f")?.plus(phr_m.formatAs("=%.4fm"))?:"")+
 					(phr_rate_rough?.formatAs(",dop=%d")?:"")+
 					(phr_rate_fine?.formatAs("%+.4f")?:"")+

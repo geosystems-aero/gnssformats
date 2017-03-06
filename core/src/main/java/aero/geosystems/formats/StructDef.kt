@@ -138,7 +138,7 @@ fun writeBits(buffer: ByteBuffer, value: Long, offset: Int, count: Int) {
 	}
 }
 
-open class StructBinding(protected val def:StructDef<*>, val buffer: ByteBuffer, val structOffset: Int) {
+open class StructBinding(protected open val def:StructDef<*>, val buffer: ByteBuffer, val structOffset: Int) {
 	internal val cached_sizes = arrayOfNulls<Int?>(def.ref_count+1)
 	internal val cached_starts = arrayOfNulls<Int?>(def.ref_count+1)
 	internal val cached_ends = arrayOfNulls<Int?>(def.ref_count+1)

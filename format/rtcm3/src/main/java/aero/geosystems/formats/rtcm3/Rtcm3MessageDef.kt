@@ -199,7 +199,7 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	/**
 	 * GLONASS L1 Code Indicator, bit(1)
 	 */
-	fun DF039() = BitMember()
+	fun DF039() = UIntMember(1)
 
 	/**
 	 * GLONASS Satellite Frequency Channel Number 0-20 (See Table 3.4-5), uint5

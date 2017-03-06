@@ -9,7 +9,7 @@ import aero.geosystems.gnss.GnssConstants
 import java.nio.ByteBuffer
 import java.util.*
 
-abstract class RtcmCommonDef_1001_1004<BINDING : RtcmCommon_1001_1004<SB>,SB:RtcmSatCommon_1001_1004>(
+abstract class RtcmCommonDef_1001_1004<BINDING : RtcmCommon_1001_1004<SB>, out SB:RtcmSatCommon_1001_1004>(
 		satdef:RtcmSatCommonDef_1001_1004<SB>,mid_const: Int) : Rtcm3MessageDef<BINDING>(mid_const) {
 	val refstn_id_def = DF003()
 	val gps_epoch_def = DF004()
@@ -20,7 +20,10 @@ abstract class RtcmCommonDef_1001_1004<BINDING : RtcmCommon_1001_1004<SB>,SB:Rtc
 	val sats_def = StructArrayMember(satdef, num_sat_def)
 }
 
-abstract class RtcmCommon_1001_1004<SB:RtcmSatCommon_1001_1004>(def: RtcmCommonDef_1001_1004<*,SB>, bb: ByteBuffer, offset: Int) : Rtcm3Message(def, bb, offset) {
+abstract class RtcmCommon_1001_1004<out SB:RtcmSatCommon_1001_1004>(
+		override final val def: RtcmCommonDef_1001_1004<*,SB>,
+		bb: ByteBuffer,
+		offset: Int) : Rtcm3Message(def, bb, offset) {
 	var refstn_id: Int by def.refstn_id_def
 	var gps_epoch: Long by def.gps_epoch_def
 	var synch_gnss: Boolean by def.synch_gnss_def
@@ -29,7 +32,7 @@ abstract class RtcmCommon_1001_1004<SB:RtcmSatCommon_1001_1004>(def: RtcmCommonD
 	var gps_smooth_int: Int by def.gps_smooth_int_def
 
 	val sats: List<SB> by def.sats_def
-	fun getSat(index: Int) = (def as RtcmCommonDef_1001_1004<*,*>).sats_def.getItem(this, index)
+	fun getSat(index: Int) = def.sats_def.getItem(this, index)
 
 	override fun bodyToString(): String {
 		return "$refstn_id,$gps_epoch,$synch_gnss,$num_sat,$gps_div_smooth,$gps_smooth_int" +
@@ -53,7 +56,8 @@ abstract class RtcmSatCommonDef_1001_1004<SB : RtcmSatCommon_1001_1004>(val hasa
 	val l2cnr_def = if (hascnr && hasL2) DF020() else null
 }
 
-abstract class RtcmSatCommon_1001_1004(def: RtcmSatCommonDef_1001_1004<*>, bb: ByteBuffer, offset: Int) :
+abstract class RtcmSatCommon_1001_1004(
+		override final val def: RtcmSatCommonDef_1001_1004<*>, bb: ByteBuffer, offset: Int) :
 		StructBinding(def, bb, offset) {
 	val hasL2 = def.hasL2
 	val hasamb = def.hasamb
@@ -88,7 +92,7 @@ abstract class RtcmSatCommon_1001_1004(def: RtcmSatCommonDef_1001_1004<*>, bb: B
 	fun getL1Phaserange(l1psr_amb: Double): Double = getL1Pseudorange(l1psr_amb) + l1phrl1psr
 	fun setL1Phaserange(l1psr_amb: Double, value: Double) {
 		var diff = value - getL1Pseudorange(l1psr_amb)
-		if (diff < (def as RtcmSatCommonDef_1001_1004).l1phrl1psr_def.minDouble || diff > def.l1phrl1psr_def.maxDouble) {
+		if (diff < def.l1phrl1psr_def.minDouble || diff > def.l1phrl1psr_def.maxDouble) {
 			diff %= (1500 * GnssConstants.GPS_L1_WAVELENGTH)
 			if (diff < 0) diff += 1500 * GnssConstants.GPS_L1_WAVELENGTH
 		}
@@ -115,7 +119,7 @@ abstract class RtcmSatCommon_1001_1004(def: RtcmSatCommonDef_1001_1004<*>, bb: B
 	fun getL2Phaserange(l1psr_amb: Double) = getL1Pseudorange(l1psr_amb) + l2phrl1psr
 	fun setL2Phaserange(l1psr_amb: Double, value: Double) {
 		var diff = value - getL1Pseudorange(l1psr_amb)
-		val phrdef = (def as RtcmSatCommonDef_1001_1004).l2phrl1psr_def!!
+		val phrdef = def.l2phrl1psr_def!!
 		if (diff < phrdef.minDouble || diff > phrdef.maxDouble) {
 			diff %= (1500 * GnssConstants.GPS_L2_WAVELENGTH)
 			if (diff < 0) diff += 1500 * GnssConstants.GPS_L2_WAVELENGTH

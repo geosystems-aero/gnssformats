@@ -53,7 +53,7 @@ class Rtcm3Decoder(sink: IGnssDataConsumer<Rtcm3Message>,
 			1001,1002,1003,1004 ->
 				(message as RtcmCommon_1001_1004<*>).gps_epoch.gpstimeWithGuessedWeeks(refGpsTime)
 			1009,1010,1011,1012 ->
-				(message as RtcmCommon_1009_1012).glo_epoch.toLong().gloms2gpstime(refGpsTime)
+				(message as RtcmCommon_1009_1012<*>).glo_epoch.toLong().gloms2gpstime(refGpsTime)
 			1071,1072,1073,1074,1075,1076,1077 ->
 				((message as RtcmMsmCommon<*,*>).gnss_epoch as Long).gpstimeWithGuessedWeeks(refGpsTime)
 			1081,1082,1083,1084,1085,1086,1087 ->

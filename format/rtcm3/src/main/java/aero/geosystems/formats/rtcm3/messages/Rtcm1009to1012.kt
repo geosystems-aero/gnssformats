@@ -45,7 +45,7 @@ abstract class RtcmSatCommonDef_1009_1012<SB : RtcmSatCommon_1009_1012>(val hasa
 
 	val sat_id_def = DF038()
 	val l1code_ind_def = DF039()
-	val sat_freq_def = DF040()
+	val sat_freq_idx_def = DF040()
 	val l1psr_def = DF041()
 	val l1phrl1psr_def = DF042()
 	val l1locktime_def = DF043()
@@ -67,7 +67,7 @@ abstract class RtcmSatCommon_1009_1012(
 
 	var sat_id by def.sat_id_def
 	var l1code_ind by def.l1code_ind_def
-	var sat_freq by def.sat_freq_def
+	var sat_freq_idx by def.sat_freq_idx_def
 	var l1psr by def.l1psr_def
 	var l1psr_raw by def.l1psr_def.raw
 	var l1phrl1psr by def.l1phrl1psr_def
@@ -86,8 +86,8 @@ abstract class RtcmSatCommon_1009_1012(
 	var l2cnr by def.l2cnr_def ?: errDoubleAccessor
 	var l2cnr_raw by def.l2cnr_def?.raw ?: errLongAccessor
 
-	val waveL1 get() = GnssConstants.gloWaveL1(sat_freq - 7)
-	val waveL2 get() = GnssConstants.gloWaveL2(sat_freq - 7)
+	val waveL1 get() = GnssConstants.gloWaveL1(sat_freq_idx - 7)
+	val waveL2 get() = GnssConstants.gloWaveL2(sat_freq_idx - 7)
 
 	fun getL1Pseudorange(l1psr_amb: Double): Double = l1psr + l1psr_amb
 	fun setL1Pseudorange(@Suppress("UNUSED_PARAMETER") l1psr_amb: Double, value: Double) {
@@ -134,7 +134,7 @@ abstract class RtcmSatCommon_1009_1012(
 	}
 
 
-	fun getL2Phase(l1psr_amb: Double) = getL1Phaserange(l1psr_amb) / waveL2
+	fun getL2Phase(l1psr_amb: Double) = getL2Phaserange(l1psr_amb) / waveL2
 	fun setL2Phase(l1psr_amb: Double, value: Double) {
 		setL2Phaserange(l1psr_amb, value * waveL2)
 	}
@@ -153,7 +153,7 @@ abstract class RtcmSatCommon_1009_1012(
 
 	override fun toString(): String {
 		var s = String.format(Locale.ENGLISH, "%d,%d,%d,%.2f,%.4f,%d",
-				sat_id, l1code_ind, sat_freq, l1psr, l1phrl1psr, l1locktime)
+				sat_id, l1code_ind, sat_freq_idx, l1psr, l1phrl1psr, l1locktime)
 		if (hasamb) s += l1psr_amb.formatAs(",%.3f")
 		if (hascnr) s += l1cnr.formatAs(",%.2f")
 		if (hasL2) s += String.format(Locale.ENGLISH, ",%d,%.2f,%.4f,%d",

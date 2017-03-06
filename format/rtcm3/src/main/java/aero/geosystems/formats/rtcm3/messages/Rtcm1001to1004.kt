@@ -128,7 +128,7 @@ abstract class RtcmSatCommon_1001_1004(
 	}
 
 
-	fun getL2Phase(l1psr_amb: Double) = getL1Phaserange(l1psr_amb) / GnssConstants.GPS_L2_WAVELENGTH
+	fun getL2Phase(l1psr_amb: Double) = getL2Phaserange(l1psr_amb) / GnssConstants.GPS_L2_WAVELENGTH
 	fun setL2Phase(l1psr_amb: Double, value: Double) {
 		setL2Phaserange(l1psr_amb, value * GnssConstants.GPS_L2_WAVELENGTH)
 	}

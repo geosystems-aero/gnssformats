@@ -60,8 +60,9 @@ abstract class RtcmMsmCommonDef<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 	val phr_rate_fine_def = if (has_rates) DF404array(gnss_cell_mask_def) else null
 }
 
-abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: RtcmMsmCommonDef<ET, BINDING>, bb: ByteBuffer, offset: Int) : Rtcm3Message(def, bb, offset) {
-	val gnss: SatSystem get() = (def as RtcmMsmCommonDef<*, *>).gnss
+abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
+		override final val def: RtcmMsmCommonDef<ET, BINDING>, bb: ByteBuffer, offset: Int) : Rtcm3Message(def, bb, offset) {
+	val gnss: SatSystem get() = def.gnss
 
 	var refstn_id by def.refstn_id_def
 	var gnss_epoch by def.gnss_epoch_def
@@ -110,9 +111,11 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 			val cnr: Double?,
 			val phr_rate_fine: Double?
 	) {
+		val satGlobalIdx = gnss.indexToId(satCode)
 		val psr_rough_m = ((psr_rough_cms?:0) + psr_rough_mod)* LIGHTMS
 		val psr_m = psr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
 		val phr_m = phr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
+		val phr_rate_mps = phr_rate_rough?.toDouble()?.plus(phr_rate_fine?:0.0)?.times(LIGHTMS)
 		override fun toString(): String {
 			return "[$cellIndex]${gnss.charCode}$satCode,$sigCode" +
 					(ext_sat_info?.formatAs(",xsi=%d") ?: "") +
@@ -129,7 +132,7 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 	}
 
 	fun buildObservations(): List<Observation> {
-		val def = def as RtcmMsmCommonDef<*, *>
+		val def = def
 		val psr_rough_cms = if (def.psr_rough_cms_def != null) psr_rough_cms else null
 		val ext_sat_info = if (def.ext_sat_info_def != null) ext_sat_info else null
 		val psr_rough_mod = psr_rough_mod
@@ -173,7 +176,7 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 		//var i = 0
 		//profile[i] -= System.nanoTime()
 		val cellSatSigCodes1 = cellSatSigCodes
-		val def = def as RtcmMsmCommonDef<*, *>
+		val def = def
 		//val cellFreqs = cellSatSigCodes1.map { MsmGpsSignalCode.byCode(it.second)?.signal?.frequency }
 		val s0 = "$refstn_id,$gnss_epoch,$multiple_msg_bit,$iods,$reserved,$clock_steering,$ext_clock,$gnss_div_smooth,$gnss_smooth_int"
 		//profile[i++] += System.nanoTime();profile[i] -= System.nanoTime()

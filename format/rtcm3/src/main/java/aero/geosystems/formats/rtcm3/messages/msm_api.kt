@@ -111,6 +111,7 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 			val cnr: Double?,
 			val phr_rate_fine: Double?
 	) {
+		val fqidx = if (gnss == SatSystem.GLONASS) ext_sat_info?.minus(7) else 0
 		val satGlobalIdx = gnss.indexToId(satCode)
 		val psr_rough_m = ((psr_rough_cms?:0) + psr_rough_mod)* LIGHTMS
 		val psr_m = psr_fine?.times(LIGHTMS)?.plus(psr_rough_m)

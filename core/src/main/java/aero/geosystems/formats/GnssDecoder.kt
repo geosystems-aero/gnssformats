@@ -32,6 +32,9 @@ interface IGnssDataConsumer<in T> {
 		}
 	}
 }
+object NopGnssConsumer: IGnssDataConsumer<Any?> {
+	override fun consume(message: Any?, buffer: ByteBuffer, timestamp: Long?, type: Int) { }
+}
 abstract class GnssDataConsumer<in T> : IGnssDataConsumer<T> {
 	override fun consume(message: T?, buffer: ByteBuffer, timestamp: Long?, type: Int) {
 		when(type){
@@ -58,16 +61,16 @@ abstract class GnssDataConsumer<in T> : IGnssDataConsumer<T> {
 	open fun handleOther(message: T?, buffer: ByteBuffer, timestamp: Long?, type: Int) {}
 }
 
-abstract class GnssDecoder<T>(var sink: IGnssDataConsumer<T>) {
+abstract class GnssDecoder<T>(var sink: IGnssDataConsumer<T> = NopGnssConsumer) {
 	abstract fun consume(data: ByteBuffer)
 	abstract val currentBufferSize: Int
 	abstract fun flush()
 }
 
 abstract class AbstractGnssDecoder<T>(
-		sink: IGnssDataConsumer<T>,
-		minHeaderLength:Int,
-		val syncLength:Int
+		minHeaderLength: Int,
+		val syncLength: Int,
+		sink: IGnssDataConsumer<T> = NopGnssConsumer
 ) : GnssDecoder<T>(sink) {
 	open val byteOrder: ByteOrder get() = ByteOrder.LITTLE_ENDIAN
 

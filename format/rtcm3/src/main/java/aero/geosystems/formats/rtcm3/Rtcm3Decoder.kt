@@ -2,6 +2,7 @@ package aero.geosystems.formats.rtcm3
 
 import aero.geosystems.formats.AbstractGnssDecoder
 import aero.geosystems.formats.IGnssDataConsumer
+import aero.geosystems.formats.NopGnssConsumer
 import aero.geosystems.formats.rtcm3.messages.GloMsmEpoch
 import aero.geosystems.formats.rtcm3.messages.RtcmCommon_1001_1004
 import aero.geosystems.formats.rtcm3.messages.RtcmCommon_1009_1012
@@ -15,8 +16,9 @@ import java.nio.ByteOrder
  * Created by aimozg on 30.01.2017.
  * Confidential.
  */
-class Rtcm3Decoder(sink: IGnssDataConsumer<Rtcm3Message>,
-                   var refGpsTime:Long) : AbstractGnssDecoder<Rtcm3Message>(sink,6,1){
+class Rtcm3Decoder(var refGpsTime: Long,
+                   sink: IGnssDataConsumer<Rtcm3Message> = NopGnssConsumer) :
+		AbstractGnssDecoder<Rtcm3Message>(6, 1, sink){
 	private var header = Rtcm3UnknownMessage(headerBuffer)
 
 	override fun resetHeader() {

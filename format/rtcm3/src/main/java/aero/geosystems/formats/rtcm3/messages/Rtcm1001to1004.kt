@@ -1,6 +1,7 @@
 package aero.geosystems.formats.rtcm3.messages
 
 import aero.geosystems.formats.StructBinding
+import aero.geosystems.formats.StructDef
 import aero.geosystems.formats.rtcm3.Rtcm3Message
 import aero.geosystems.formats.rtcm3.Rtcm3MessageDef
 import aero.geosystems.formats.rtcm3.Rtcm3StructDef
@@ -46,62 +47,60 @@ abstract class RtcmSatCommonDef_1001_1004<SB : RtcmSatCommon_1001_1004>(val hasa
 	val l1code_ind_def = DF010()
 	val l1psr_def = DF011()
 	val l1phrl1psr_def = DF012()
-	val l1locktime_def = DF013()
+	val l1locktime_ind_def = DF013()
 	val l1psr_amb_def = if (hasamb) DF014() else null
 	val l1cnr_def = if (hascnr) DF015() else null
 	val l2code_ind_def = if (hasL2) DF016() else null
 	val l2l1psrdiff_def = if (hasL2) DF017() else null
 	val l2phrl1psr_def = if (hasL2) DF018() else null
-	val l2locktime_def = if (hasL2) DF019() else null
+	val l2locktime_ind_def = if (hasL2) DF019() else null
 	val l2cnr_def = if (hascnr && hasL2) DF020() else null
 }
 
-abstract class RtcmSatCommon_1001_1004(
-		override final val def: RtcmSatCommonDef_1001_1004<*>, bb: ByteBuffer, offset: Int) :
-		StructBinding(def, bb, offset) {
-	val hasL2 = def.hasL2
-	val hasamb = def.hasamb
-	val hascnr = def.hascnr
+abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val hascnr:Boolean,
+                                   def_: StructDef<*>, bb:ByteBuffer, offset:Int): StructBinding(def_,bb,offset) {
+	abstract val waveL1: Double
+	abstract val waveL2: Double
+	abstract val min_l1phrl1psrDouble: Double
+	abstract val max_l1phrl1psrDouble: Double
+	abstract val min_l2phrl1psrDouble: Double
+	abstract val max_l2phrl1psrDouble: Double
 
-	var sat_id: Int by def.sat_id_def
-	var l1code_ind: Int by def.l1code_ind_def
-	var l1psr: Double by def.l1psr_def
-	var l1psr_raw: Long by def.l1psr_def.raw
-	var l1phrl1psr: Double by def.l1phrl1psr_def
-	var l1phrl1psr_raw: Long by def.l1phrl1psr_def.raw
-	var l1locktime: Int by def.l1locktime_def
-	var l1psr_amb: Double by def.l1psr_amb_def ?: errDoubleAccessor
-	var l1psr_amb_raw: Long by def.l1psr_amb_def?.raw ?: errLongAccessor
-	var l1cnr: Double by def.l1cnr_def ?: errDoubleAccessor
-	var l1cnr_raw: Long by def.l1cnr_def?.raw ?: errLongAccessor
-	var l2code_ind: Int by def.l2code_ind_def ?: errIntAccessor
-	var l2l1psrdiff: Double by def.l2l1psrdiff_def ?: errDoubleAccessor
-	var l2l1psrdiff_raw: Long by def.l2l1psrdiff_def?.raw ?: errLongAccessor
-	var l2phrl1psr: Double by def.l2phrl1psr_def ?: errDoubleAccessor
-	var l2phrl1psr_raw: Long by def.l2phrl1psr_def?.raw ?: errLongAccessor
-	var l2locktime: Int by def.l2locktime_def ?: errIntAccessor
-	var l2cnr: Double by def.l2cnr_def ?: errDoubleAccessor
-	var l2cnr_raw: Long by def.l2cnr_def?.raw ?: errLongAccessor
+	abstract var l1psr: Double
+	abstract var l1psr_amb: Double
+	abstract var l1psr_amb_raw: Long
+	abstract var l1phrl1psr: Double
+	abstract var l1phrl1psr_raw: Long
+	abstract var l1locktime_ind: Int
+	abstract var l1cnr: Double
+	abstract var l2l1psrdiff: Double
+	abstract var l2l1psrdiff_raw: Long
+	abstract var l2phrl1psr: Double
+	abstract var l2phrl1psr_raw: Long
+	abstract var l2locktime_ind: Int
+	abstract var l2cnr: Double
 
 	fun getL1Pseudorange(l1psr_amb: Double): Double = l1psr + l1psr_amb
+
 	fun setL1Pseudorange(@Suppress("UNUSED_PARAMETER") l1psr_amb: Double, value: Double) {
 		l1psr = value % LIGHTMS
 		if (hasamb) l1psr_amb_raw = (value / LIGHTMS).toLong()
 	}
 
 	fun getL1Phaserange(l1psr_amb: Double): Double = getL1Pseudorange(l1psr_amb) + l1phrl1psr
+
 	fun setL1Phaserange(l1psr_amb: Double, value: Double) {
 		var diff = value - getL1Pseudorange(l1psr_amb)
-		if (diff < def.l1phrl1psr_def.minDouble || diff > def.l1phrl1psr_def.maxDouble) {
-			diff %= (1500 * GnssConstants.GPS_L1_WAVELENGTH)
-			if (diff < 0) diff += 1500 * GnssConstants.GPS_L1_WAVELENGTH
+		if (diff < min_l1phrl1psrDouble || diff > max_l1phrl1psrDouble) {
+			diff %= (1500 * waveL1)
+			if (diff < 0) diff += 1500 * waveL1
 		}
 		l1phrl1psr = diff
 	}
 
-	fun getL1Phase(l1psr_amb: Double) = getL1Phaserange(l1psr_amb) / GnssConstants.GPS_L1_WAVELENGTH
+	fun getL1Phase(l1psr_amb: Double) = getL1Phaserange(l1psr_amb) / waveL1
 	fun setL1Phase(l1psr_amb: Double, value: Double) {
-		setL1Phaserange(l1psr_amb, value * GnssConstants.GPS_L1_WAVELENGTH);
+		setL1Phaserange(l1psr_amb, value * waveL1);
 	}
 
 	fun isL1valid() = l1phrl1psr_raw != 0x80000L
@@ -110,27 +109,38 @@ abstract class RtcmSatCommon_1001_1004(
 		l1phrl1psr_raw = 0x80000L
 	}
 
+	fun getL1MinLocktime():Int {
+		return (0..5)
+				.firstOrNull { l1locktime_ind < LLI_MAXES[it] }
+				?.let { (l1locktime_ind shl it) - LLI_OFFSETS[it] }
+				?: 937
+	}
+	fun setL1Locktime(locktime:Int) {
+		l1locktime_ind = (0..5)
+				.firstOrNull { locktime < LLT_MAXES[it] }
+				?.let { locktime + (LLI_OFFSETS[it] shr it) }
+				?: 127
+	}
+
 	fun getL2Pseudorange(l1psr_amb: Double) = getL1Pseudorange(l1psr_amb) + l2l1psrdiff
 	fun setL2Pseudorange(l1psr_amb: Double, value: Double) {
 		l2l1psrdiff = value - getL1Pseudorange(l1psr_amb)
 	}
 
-
 	fun getL2Phaserange(l1psr_amb: Double) = getL1Pseudorange(l1psr_amb) + l2phrl1psr
 	fun setL2Phaserange(l1psr_amb: Double, value: Double) {
 		var diff = value - getL1Pseudorange(l1psr_amb)
-		val phrdef = def.l2phrl1psr_def!!
-		if (diff < phrdef.minDouble || diff > phrdef.maxDouble) {
-			diff %= (1500 * GnssConstants.GPS_L2_WAVELENGTH)
-			if (diff < 0) diff += 1500 * GnssConstants.GPS_L2_WAVELENGTH
+		if (diff < min_l2phrl1psrDouble || diff > max_l2phrl1psrDouble) {
+			diff %= (1500 * waveL2)
+			if (diff < 0) diff += 1500 * waveL2
 		}
 		l2phrl1psr = diff
 	}
 
 
-	fun getL2Phase(l1psr_amb: Double) = getL2Phaserange(l1psr_amb) / GnssConstants.GPS_L2_WAVELENGTH
+	fun getL2Phase(l1psr_amb: Double) = getL2Phaserange(l1psr_amb) / waveL2
 	fun setL2Phase(l1psr_amb: Double, value: Double) {
-		setL2Phaserange(l1psr_amb, value * GnssConstants.GPS_L2_WAVELENGTH)
+		setL2Phaserange(l1psr_amb, value * waveL2)
 	}
 
 	fun isL2codeValid() = l2l1psrdiff_raw != 0x2000L
@@ -144,12 +154,58 @@ abstract class RtcmSatCommon_1001_1004(
 	fun setL2phaseInvalid() {
 		l2phrl1psr_raw = 0x80000L
 	}
+	fun getL2MinLocktime():Int {
+		return (0..5)
+				.firstOrNull { l2locktime_ind < LLI_MAXES[it] }
+				?.let { (l2locktime_ind shl it) - LLI_OFFSETS[it] }
+				?: 937
+	}
+	fun setL2Locktime(locktime:Int) {
+		l2locktime_ind = (0..5)
+				.firstOrNull { locktime < LLT_MAXES[it] }
+				?.let { locktime + (LLI_OFFSETS[it] shr it) }
+				?: 127
+	}
+}
+
+abstract class RtcmSatCommon_1001_1004(
+		override final val def: RtcmSatCommonDef_1001_1004<*>, bb: ByteBuffer, offset: Int) :
+		Rtcm3v0RtkSatCommon(def.hasL2,def.hasamb,def.hascnr,def, bb, offset) {
+	override val waveL1 = GnssConstants.GPS_L1_WAVELENGTH
+	override val waveL2 = GnssConstants.GPS_L2_WAVELENGTH
+	override val min_l1phrl1psrDouble: Double
+		get() = def.l1phrl1psr_def.minDouble
+	override val max_l1phrl1psrDouble: Double
+		get() = def.l1phrl1psr_def.maxDouble
+	override val min_l2phrl1psrDouble: Double
+		get() = def.l2phrl1psr_def?.minDouble?: error("No L2")
+	override val max_l2phrl1psrDouble: Double
+		get() = def.l2phrl1psr_def?.maxDouble?: error("No L2")
+	var sat_id: Int by def.sat_id_def
+	var l1code_ind: Int by def.l1code_ind_def
+	override var l1psr: Double by def.l1psr_def
+	var l1psr_raw: Long by def.l1psr_def.raw
+	override var l1phrl1psr: Double by def.l1phrl1psr_def
+	override var l1phrl1psr_raw: Long by def.l1phrl1psr_def.raw
+	override var l1locktime_ind: Int by def.l1locktime_ind_def
+	override var l1psr_amb: Double by def.l1psr_amb_def ?: errDoubleAccessor
+	override var l1psr_amb_raw: Long by def.l1psr_amb_def?.raw ?: errLongAccessor
+	override var l1cnr: Double by def.l1cnr_def ?: errDoubleAccessor
+	var l1cnr_raw: Long by def.l1cnr_def?.raw ?: errLongAccessor
+	var l2code_ind: Int by def.l2code_ind_def ?: errIntAccessor
+	override var l2l1psrdiff: Double by def.l2l1psrdiff_def ?: errDoubleAccessor
+	override var l2l1psrdiff_raw: Long by def.l2l1psrdiff_def?.raw ?: errLongAccessor
+	override var l2phrl1psr: Double by def.l2phrl1psr_def ?: errDoubleAccessor
+	override var l2phrl1psr_raw: Long by def.l2phrl1psr_def?.raw ?: errLongAccessor
+	override var l2locktime_ind: Int by def.l2locktime_ind_def ?: errIntAccessor
+	override var l2cnr: Double by def.l2cnr_def ?: errDoubleAccessor
+	var l2cnr_raw: Long by def.l2cnr_def?.raw ?: errLongAccessor
 
 	override fun toString(): String {
-		var s = String.format(Locale.ENGLISH, "%d,%d,%.2f,%.4f,%d", sat_id, l1code_ind, l1psr, l1phrl1psr, l1locktime)
+		var s = String.format(Locale.ENGLISH, "%d,%d,%.2f,%.4f,%d", sat_id, l1code_ind, l1psr, l1phrl1psr, l1locktime_ind)
 		if (hasamb) s+= String.format(Locale.ENGLISH, ",%.3f,%.2f", l1psr_amb, l1cnr)
 		if (hasL2) {
-			s += String.format(Locale.ENGLISH, ",%d,%.2f,%.4f,%d", l2code_ind, l2l1psrdiff, l2phrl1psr, l2locktime)
+			s += String.format(Locale.ENGLISH, ",%d,%.2f,%.4f,%d", l2code_ind, l2l1psrdiff, l2phrl1psr, l2locktime_ind)
 			if (hasamb) s += String.format(Locale.ENGLISH, ",%.2f", l2cnr)
 		}
 		return s
@@ -187,6 +243,12 @@ class Rtcm1002(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1002.
 					if (diff < 0) diff += 1500 * GnssConstants.GPS_L1_WAVELENGTH
 				}
 				l1phrl1psr = diff
+			}
+
+		var l1Phase: Double
+			get() = l1Phaserange / GnssConstants.GPS_L1_WAVELENGTH
+			set(value) {
+				l1Phaserange = value * GnssConstants.GPS_L1_WAVELENGTH
 			}
 
 		companion object : RtcmSatCommonDef_1001_1004<Sat1002>(true,false) {
@@ -271,4 +333,8 @@ class Rtcm1004(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1004.
 	}
 }
 
+val LLI_MAXES = listOf(24, 48, 72, 96, 120, 127)
+val LLI_OFFSETS = listOf(0, 24, 120, 408, 1176, 3096)
+val LLT_MAXES = listOf(24, 72, 168, 360, 744, 937)
+val LLT_MAXIMUM = LLT_MAXES[LLT_MAXES.size - 1]
 

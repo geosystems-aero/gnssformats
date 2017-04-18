@@ -105,6 +105,8 @@ abstract class AbstractGnssDecoder<T>(
 	override fun consume(data: ByteBuffer) {
 		var gpos = data.position()
 		var glen = 0
+		var pp = data.position()
+		val state0 = "data@$pp/${data.limit()}, HB=${headerBuffer.position()}/${headerBuffer.limit()}, MB=${messageBuffer.position()}/${messageBuffer.limit()}"
 		while(data.hasRemaining()) {
 			if (headerBuffer.hasRemaining()) {
 				// SYNC
@@ -118,7 +120,7 @@ abstract class AbstractGnssDecoder<T>(
 					}
 				}
 				// MINIMAL HEADER
-				if (headerBuffer.position() == syncLength && data.hasRemaining()) {
+				if (headerBuffer.position() >= syncLength && data.hasRemaining()) {
 					if (glen > 0) {
 						sink.consumeGarbage(data.subByteBuffer(gpos, glen))
 						glen = 0
@@ -141,7 +143,7 @@ abstract class AbstractGnssDecoder<T>(
 				}
 			}
 			// REST OF HEADER AND MESSAGE BODY
-			if (!headerBuffer.hasRemaining() && data.hasRemaining()) {
+			if (!headerBuffer.hasRemaining() && messageBuffer.hasRemaining() && data.hasRemaining()) {
 				val n = minimum(messageBuffer.remaining(),data.remaining())
 				messageBuffer.put(data,n)
 			}
@@ -150,7 +152,13 @@ abstract class AbstractGnssDecoder<T>(
 				messageBuffer.flip()
 				if (crcGood()) {
 					resetHeader()
-					completeAndConsumeMessage()
+					try {
+						completeAndConsumeMessage()
+					} catch (e:Exception) {
+						glen += syncLength
+						sink.consumeGarbage(messageBuffer.subByteBuffer(gpos,glen))
+						throw e
+					}
 					if (glen > 0) {
 						sink.consumeGarbage(messageBuffer.subByteBuffer(gpos,glen))
 						glen = 0
@@ -170,6 +178,12 @@ abstract class AbstractGnssDecoder<T>(
 					//return;
 				}
 			}
+			if (data.position() == pp) {
+				error("${this.javaClass.simpleName} re-read " +state0+ "  " +
+						"data@$pp/${data.limit()}, HB=${headerBuffer.position()}/${headerBuffer.limit()}, MB=${messageBuffer.position()}/${messageBuffer.limit()}"
+				)
+			}
+			pp = data.position()
 		}
 		if (glen > 0) {
 			sink.consumeGarbage(data.subByteBuffer(gpos,glen))

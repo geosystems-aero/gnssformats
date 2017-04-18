@@ -143,9 +143,9 @@ abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val 
 		setL2Phaserange(l1psr_amb, value * waveL2)
 	}
 
-	fun isL2codeValid() = l2l1psrdiff_raw != 0x2000L
+	fun isL2codeValid() = hasL2 && l2l1psrdiff_raw != 0x2000L
 
-	fun isL2phaseValid() = l2phrl1psr_raw != 0x80000L
+	fun isL2phaseValid() = hasL2 && l2phrl1psr_raw != 0x80000L
 
 	fun setL2codeInvalid() {
 		l2l1psrdiff_raw = 0x2000L

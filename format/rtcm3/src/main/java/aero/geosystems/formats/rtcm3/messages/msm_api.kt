@@ -137,7 +137,7 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 		}
 	}
 
-	fun buildObservations(): List<Observation> {
+	fun buildObservations(ext_glofreqs:Array<Int?>?=null): List<Observation> {
 		val def = def
 		val psr_rough_cms = if (def.psr_rough_cms_def != null) psr_rough_cms else null
 		val ext_sat_info = if (def.ext_sat_info_def != null) ext_sat_info else null
@@ -154,7 +154,8 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 			val sat = sats.indexOf(it.first)
 			Observation(gnss, it.first, MsmSignalCode.byCode(gnss, it.second), i,
 					psr_rough_cms?.get(sat),
-					ext_sat_info?.get(sat),
+					ext_sat_info?.get(sat) ?:
+							if (gnss==SatSystem.GLONASS && ext_glofreqs!=null) ext_glofreqs[sat-1]?.plus(7) else null,
 					psr_rough_mod[sat],
 					phr_rate_rough?.get(sat),
 					psr_fine?.get(i),

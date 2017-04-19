@@ -565,8 +565,14 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	 */
 	fun DF232(df231: UIntMember) = VarStringMember(df231)
 
+	// TODO DF232-DF347
 
-	// TODO DF232-DF363
+	/**
+	 * Galileo Epoch Time (TOW), 0-604,799,999 ms, uint30 x 1 ms
+	 */
+	fun DF248() = ULongMember(30)
+
+	// TODO DF249-DF363
 
 	/**
 	 * Quarter Cucle Indicator, bit(2)
@@ -863,7 +869,14 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 
 	fun DF420array(gnss_sat_mask_def: BitMaskReturningMember) = MsmMaskBoolArray(gnss_sat_mask_def)
 
-	// TODO DF421+
+	// TODO DF421-DF426
+
+	/**
+	 * BDS Epoch Time (TOW), 0-604,799,999 ms, uint30 x 1 ms
+	 */
+	fun DF427() = ULongMember(30)
+
+	// TODO DF428+
 
 	companion object {
 		const val LIGHTMS = 299792458.0 / 1000.0

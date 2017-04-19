@@ -8,9 +8,9 @@ import kotlin.properties.ReadWriteProperty
 
 abstract class RtcmMsmBeidouDef<BINDING : RtcmMsmCommon<Long, BINDING>>(mid_const: Int) :
 		RtcmMsmCommonDef<Long, BINDING>(SatSystem.BDS, mid_const - 1120, mid_const) {
-	override fun gnss_epoch_def_gen(): ReadWriteProperty<StructBinding, Long> = DF004()
+	override fun gnss_epoch_def_gen(): ReadWriteProperty<StructBinding, Long> = DF427()
 	override fun getGpstime(epoch_time: Long, ref_gpstime: Long): Long {
-		return GnssUtils.addGuessedWeek(ref_gpstime,epoch_time)
+		return GnssUtils.addGuessedWeek(ref_gpstime,epoch_time+14000)
 	}
 }
 

@@ -155,7 +155,7 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 			Observation(gnss, it.first, MsmSignalCode.byCode(gnss, it.second), i,
 					psr_rough_cms?.get(sat),
 					ext_sat_info?.get(sat) ?:
-							if (gnss==SatSystem.GLONASS && ext_glofreqs!=null) ext_glofreqs[sat-1]?.plus(7) else null,
+							if (gnss==SatSystem.GLONASS && ext_glofreqs!=null) ext_glofreqs[it.first-1]?.plus(7) else null,
 					psr_rough_mod[sat],
 					phr_rate_rough?.get(sat),
 					psr_fine?.get(i),

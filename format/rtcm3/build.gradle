@@ -1,0 +1,37 @@
+//apply plugin: 'java'
+apply plugin: 'kotlin'
+
+ext.mainClassName = 'aero.geosystems.formats.rtcm3.app.AppKt'
+
+repositories {
+    mavenCentral()
+}
+
+kotlin {
+    experimental {
+        coroutines 'enable'
+    }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+    compile project(':core')
+    compile project(':GNSS')
+}
+
+jar {
+    manifest {
+        attributes 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+                   'Main-Class': "$mainClassName"
+
+    }
+}
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': "$mainClassName"
+    }
+    baseName = 'Rtcm3App'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

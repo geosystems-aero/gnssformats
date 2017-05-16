@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/GNSS/GNSS.iml" filepath="$PROJECT_DIR$/GNSS/GNSS.iml" />
-      <module fileurl="file://$PROJECT_DIR$/core/core.iml" filepath="$PROJECT_DIR$/core/core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/gnssformats.iml" filepath="$PROJECT_DIR$/gnssformats.iml" />
-      <module fileurl="file://$PROJECT_DIR$/format/rtcm3/rtcm3.iml" filepath="$PROJECT_DIR$/format/rtcm3/rtcm3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/GNSS/GNSS.iml" filepath="$PROJECT_DIR$/.idea/modules/GNSS/GNSS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/core/core.iml" filepath="$PROJECT_DIR$/.idea/modules/core/core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/format/rtcm3/format_rtcm3.iml" filepath="$PROJECT_DIR$/.idea/modules/format/rtcm3/format_rtcm3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/gnssformats.iml" filepath="$PROJECT_DIR$/.idea/modules/gnssformats.iml" />
     </modules>
   </component>
 </project>

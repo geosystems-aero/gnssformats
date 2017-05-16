@@ -1,6 +1,13 @@
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
-target
+target/
 /.idea/workspace.xml
 /.idea/libraries/Maven_*.xml
+/.idea/libraries/Gradle_*.xml
 /.idea/inspectionProfiles/Project_Default.xml
+
+gradle/
+.gradle/
+gradlew
+gradlew.bat
+build/

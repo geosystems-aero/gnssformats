@@ -138,10 +138,11 @@ fun writeBits(buffer: ByteBuffer, value: Long, offset: Int, count: Int) {
 	}
 }
 
-open class StructBinding(protected val def:StructDef<*>, val buffer: ByteBuffer, val structOffset: Int) {
-	internal val cached_sizes = arrayOfNulls<Int?>(def.ref_count+1)
-	internal val cached_starts = arrayOfNulls<Int?>(def.ref_count+1)
-	internal val cached_ends = arrayOfNulls<Int?>(def.ref_count+1)
+open class StructBinding(def_:StructDef<*>, val buffer: ByteBuffer, val structOffset: Int) {
+	protected open val def:StructDef<*> = def_
+	internal val cached_sizes = arrayOfNulls<Int?>(def_.ref_count+1)
+	internal val cached_starts = arrayOfNulls<Int?>(def_.ref_count+1)
+	internal val cached_ends = arrayOfNulls<Int?>(def_.ref_count+1)
 	companion object {
 		fun <T> errAccessor(): ReadWriteProperty<Any, T> = object : ReadWriteProperty<Any, T> {
 			override operator fun getValue(thisRef: Any, property: KProperty<*>): T = error(this.javaClass)

@@ -16,7 +16,7 @@ import java.nio.ByteBuffer
 fun main(args: Array<String>) {
 	//System.`in`.read()
 	var output: FileOutputStream? = null
-	val decoder = Rtcm3Decoder(object : IGnssDataConsumer<Rtcm3Message> {
+	val decoder = Rtcm3Decoder(GnssUtils.gpstime(), object : IGnssDataConsumer<Rtcm3Message> {
 		override fun consume(message: Rtcm3Message?, buffer: ByteBuffer, timestamp: Long?, type: Int) {
 			if (message!=null) {
 				println(message.toString())
@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
 			}*/
 		}
 
-	}, GnssUtils.gpstime())
+	})
 	for (arg in args) {
 		if (arg.startsWith("input=")) System.setIn(FileInputStream(arg.substring("input=".length)))
 		if (arg.startsWith("output=")) output = FileOutputStream(arg.substring("output=".length))

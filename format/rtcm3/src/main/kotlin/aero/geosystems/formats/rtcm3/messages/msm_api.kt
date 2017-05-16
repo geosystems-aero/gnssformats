@@ -43,6 +43,7 @@ abstract class RtcmMsmCommonDef<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 	val gnss_cell_mask_def = DF396(gnss_sat_mask_def, gnss_sig_mask_def)
 
 	abstract protected fun gnss_epoch_def_gen(): ReadWriteProperty<StructBinding, ET>
+	abstract fun getGpstime(epoch_time: ET, ref_gpstime: Long):Long
 
 	val psr_rough_cms_def = if (has_cms) DF397array(gnss_sat_mask_def) else null
 	@Suppress("LeakingThis")
@@ -60,8 +61,9 @@ abstract class RtcmMsmCommonDef<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 	val phr_rate_fine_def = if (has_rates) DF404array(gnss_cell_mask_def) else null
 }
 
-abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: RtcmMsmCommonDef<ET, BINDING>, bb: ByteBuffer, offset: Int) : Rtcm3Message(def, bb, offset) {
-	val gnss: SatSystem get() = (def as RtcmMsmCommonDef<*, *>).gnss
+abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
+		override final val def: RtcmMsmCommonDef<ET, BINDING>, bb: ByteBuffer, offset: Int) : Rtcm3Message(def, bb, offset) {
+	val gnss: SatSystem get() = def.gnss
 
 	var refstn_id by def.refstn_id_def
 	var gnss_epoch by def.gnss_epoch_def
@@ -94,10 +96,11 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 	val satCodes: IntArray get() = gnss_sat_mask.stream().map { it + 1 }.toArray()
 	val sigCodes: IntArray get() = gnss_sig_mask.stream().map { it + 1 }.toArray()
 
+	fun getGpstime(ref_gpstime: Long):Long = def.getGpstime(gnss_epoch,ref_gpstime)
 	data class Observation(
 			val gnss: SatSystem,
 			val satCode: Int,
-			val sigCode: MsmGpsSignalCode?,
+			val sigCode: MsmSignalCode?,
 			val cellIndex: Int,
 			val psr_rough_cms: Int?,
 			val ext_sat_info: Int?,
@@ -110,16 +113,22 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 			val cnr: Double?,
 			val phr_rate_fine: Double?
 	) {
+		val fqidx = if (gnss == SatSystem.GLONASS) ext_sat_info?.minus(7) else 0
+		val wavelength = if (fqidx!=null && sigCode?.signal != null) sigCode.signal.wavelength(fqidx) else null
+		val satGlobalIdx = gnss.indexToId(satCode)
+		val psr_rough_m = ((psr_rough_cms?:0) + psr_rough_mod)* LIGHTMS
+		val psr_m = psr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
+		val phr_m = phr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
+		val phr_cy = if (wavelength != null && phr_m != null) phr_m/wavelength else null
+		val phr_rate_mps = phr_rate_rough?.toDouble()?.plus(phr_rate_fine?:0.0)?.times(LIGHTMS)
+		val phr_rate_cyps = if (wavelength != null && phr_rate_mps != null) phr_rate_mps/wavelength else null
 		override fun toString(): String {
-			val psr_rough_m = ((psr_rough_cms?:0) + psr_rough_mod)* LIGHTMS
-			val psr_m = psr_rough_m + (psr_fine?.times(LIGHTMS)?:0.0)
-			val phr_m = phr_fine?.times(LIGHTMS)?.plus(psr_rough_m)?:0.0
 			return "[$cellIndex]${gnss.charCode}$satCode,$sigCode" +
 					(ext_sat_info?.formatAs(",xsi=%d") ?: "") +
 					",psr=" + psr_rough_mod.times(LIGHTMS).formatAs("%.3f") +
 					(psr_rough_cms?.times(LIGHTMS)?.formatAs("%+.3f") ?: "") +
 					(psr_fine?.times(LIGHTMS)?.formatAs("%+.4f")?:"") +
-					psr_m.formatAs("=%.4fm")+
+					(psr_m?.formatAs("=%.4fm")?:"")+
 					(phr_fine?.times(LIGHTMS)?.formatAs(",phr=psr%+.4f")?.plus(phr_m.formatAs("=%.4fm"))?:"")+
 					(phr_rate_rough?.formatAs(",dop=%d")?:"")+
 					(phr_rate_fine?.formatAs("%+.4f")?:"")+
@@ -128,8 +137,8 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 		}
 	}
 
-	fun buildObservations(): List<Observation> {
-		val def = def as RtcmMsmCommonDef<*, *>
+	fun buildObservations(ext_glofreqs:Array<Int?>?=null): List<Observation> {
+		val def = def
 		val psr_rough_cms = if (def.psr_rough_cms_def != null) psr_rough_cms else null
 		val ext_sat_info = if (def.ext_sat_info_def != null) ext_sat_info else null
 		val psr_rough_mod = psr_rough_mod
@@ -143,9 +152,10 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 		val sats = satCodes
 		return cellSatSigCodes.mapIndexed { i, it ->
 			val sat = sats.indexOf(it.first)
-			Observation(gnss, it.first, MsmGpsSignalCode.byCode(gnss, it.second), i,
+			Observation(gnss, it.first, MsmSignalCode.byCode(gnss, it.second), i,
 					psr_rough_cms?.get(sat),
-					ext_sat_info?.get(sat),
+					ext_sat_info?.get(sat) ?:
+							if (gnss==SatSystem.GLONASS && ext_glofreqs!=null) ext_glofreqs[it.first-1]?.plus(7) else null,
 					psr_rough_mod[sat],
 					phr_rate_rough?.get(sat),
 					psr_fine?.get(i),
@@ -173,17 +183,17 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(def: Rtcm
 		//var i = 0
 		//profile[i] -= System.nanoTime()
 		val cellSatSigCodes1 = cellSatSigCodes
-		val def = def as RtcmMsmCommonDef<*, *>
-		//val cellFreqs = cellSatSigCodes1.map { MsmGpsSignalCode.byCode(it.second)?.signal?.frequency }
+		val def = def
+		//val cellFreqs = cellSatSigCodes1.map { MsmSignalCode.byCode(it.second)?.signal?.frequency }
 		val s0 = "$refstn_id,$gnss_epoch,$multiple_msg_bit,$iods,$reserved,$clock_steering,$ext_clock,$gnss_div_smooth,$gnss_smooth_int"
 		//profile[i++] += System.nanoTime();profile[i] -= System.nanoTime()
 		val gnss = def.gnss
 		val gnssc = gnss.charCode.toString()
 		val s1 = satCodes.joinFormatted("%s", ",", prefix = ";") { "$gnssc$it" }
 		//profile[i++] += System.nanoTime();profile[i] -= System.nanoTime()
-		val s2 = sigCodes.joinFormatted("%s", ",", prefix = ";") { MsmGpsSignalCode.byCode(gnss, it)?.name ?: "SIG#$it" }
+		val s2 = sigCodes.joinFormatted("%s", ",", prefix = ";") { MsmSignalCode.byCode(gnss, it)?.name ?: "SIG#$it" }
 		//profile[i++] += System.nanoTime();profile[i] -= System.nanoTime()
-		val s3 = cellSatSigCodes1.joinFormatted("%s", ",", prefix = ";") { gnssc + it.first + "." + (MsmGpsSignalCode.byCode(gnss, it.second)?.name ?: "SIG#$it") }
+		val s3 = cellSatSigCodes1.joinFormatted("%s", ",", prefix = ";") { gnssc + it.first + "." + (MsmSignalCode.byCode(gnss, it.second)?.name ?: "SIG#$it") }
 		return s0+s1+s2+s3+";"+buildObservations().joinToString(";")
 		//profile[i++] += System.nanoTime();profile[i] -= System.nanoTime()
 		/*val s4 = if (def.psr_rough_cms_def != null) psr_rough_cms.joinFormatted("%s", ",", ";psr=[", "]") { (it * LIGHTMS).formatAs("%.3f") } else ""

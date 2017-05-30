@@ -11,6 +11,8 @@ import aero.geosystems.gnss.gloms2gpstime
 import aero.geosystems.gnss.gpstimeWithGuessedWeeks
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.logging.Level
+import java.util.logging.LogManager
 
 /**
  * Created by aimozg on 30.01.2017.
@@ -62,7 +64,10 @@ class Rtcm3Decoder(var refGpsTime: Long,
 				((message as RtcmMsmCommon<*,*>).gnss_epoch as GloMsmEpoch).epochTime.gloms2gpstime(refGpsTime)
 			else -> null
 		}
-		if (gpstime != null) refGpsTime = gpstime
+		if (gpstime != null) {
+			if (logger.isLoggable(Level.FINEST)) logger.log(Level.FINEST,"$mid | $refGpsTime -> $gpstime")
+			refGpsTime = gpstime
+		}
 		/*
 		if (mid == 1013) {
 			refGpstime = GnssUtils.addGuessedWeek(
@@ -78,5 +83,7 @@ class Rtcm3Decoder(var refGpsTime: Long,
 		}
 		sink.consume(message,messageBuffer,gpstime,type)
 	}
-
+	companion object {
+		private val logger = LogManager.getLogManager().getLogger("aero.geosystems.formats.rtcm3.Rtcm3Decoder")
+	}
 }

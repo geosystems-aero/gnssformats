@@ -123,7 +123,7 @@ fun writeBits(buffer: ByteBuffer, value: Long, offset: Int, count: Int) {
 		val avail = 8 - (i % 8)
 		if (avail > n) {
 			val mask = 1L.shl(n).minus(1).shl(avail - n)
-			byt = byt.and(mask).or(x.shl(avail - n))
+			byt = byt.and(mask.inv()).or(x.shl(avail - n))
 			i += n
 			n = 0
 		} else {
@@ -543,9 +543,15 @@ abstract class StructDef<out BINDING : StructBinding> {
 		}
 	}
 
-	fun bitSize(binding: StructBinding) = frontMembers.lastOrNull()?.pos?.end(binding) ?: 0
+	fun bitSize(binding: StructBinding) = tailMembers.lastOrNull()?.pos?.end(binding) ?:
+			frontMembers.lastOrNull()?.pos?.end(binding) ?: 0
 
 	fun fixedSize(): Int? = frontMembers.fold(0 as Int?, { s, m -> s?.plus(m.pos.fixedSize ?: return@fold null) })
+
+	fun minFixedSize(): Int = (
+			frontMembers.fold(0, { s, m -> s + (m.pos.fixedSize ?: 0) }) +
+					tailMembers.fold(0, { s, m -> s + (m.pos.fixedSize ?: 0) }) + 7
+			) / 8
 
 	fun byteSize(binding:StructBinding) = (bitSize(binding) + 7) / 8
 

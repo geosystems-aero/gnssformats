@@ -330,6 +330,14 @@ class Rtcm1004(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1004.
 
 	companion object : RtcmCommonDef_1001_1004<Rtcm1004,Sat1004>(Sat1004.Companion,1004) {
 		override fun binding(bb: ByteBuffer, structOffset: Int) = Rtcm1004(bb, structOffset)
+
+		fun allocate(nsats:Int):Rtcm1004 {
+			val bb0 = ByteBuffer.allocate(minFixedSize())
+			val m0 = Rtcm1004(bb0)
+			m0.num_sat = nsats
+			val bb = ByteBuffer.allocate(byteSize(m0))
+			return Rtcm1004(bb)
+		}
 	}
 }
 

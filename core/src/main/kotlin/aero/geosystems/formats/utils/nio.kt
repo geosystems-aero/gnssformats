@@ -28,6 +28,11 @@ fun ByteBuffer.flipDuplicate() = duplicate()!!.apply {
 	flip()
 }
 fun ByteArray.asByteBuffer() = ByteBuffer.wrap(this)!!
+fun ByteBuffer.copyToArray(srcpos:Int=0,srclen:Int=limit()):ByteArray {
+	val arr = ByteArray(srclen)
+	duplicate().apply { position(srcpos) }.get(arr,0,srclen)
+	return arr
+}
 
 fun String.parseAsHex() = BigInteger(this,16).toByteArray().let { arr ->
 	val n = length/2

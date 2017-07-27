@@ -120,7 +120,7 @@ abstract class RtcmMsmCommon<ET, BINDING : RtcmMsmCommon<ET, BINDING>>(
 		val psr_m = psr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
 		val phr_m = phr_fine?.times(LIGHTMS)?.plus(psr_rough_m)
 		val phr_cy = if (wavelength != null && phr_m != null) phr_m/wavelength else null
-		val phr_rate_mps = phr_rate_rough?.toDouble()?.plus(phr_rate_fine?:0.0)?.times(LIGHTMS)
+		val phr_rate_mps = phr_rate_rough?.toDouble()?.plus(phr_rate_fine?:0.0)
 		val phr_rate_cyps = if (wavelength != null && phr_rate_mps != null) phr_rate_mps/wavelength else null
 		override fun toString(): String {
 			return "[$cellIndex]${gnss.charCode}$satCode,$sigCode" +

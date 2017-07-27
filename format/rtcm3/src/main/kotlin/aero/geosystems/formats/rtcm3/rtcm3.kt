@@ -52,6 +52,7 @@ abstract class Rtcm3Message(def: Rtcm3MessageDef<*>, bb: ByteBuffer, offset: Int
 	var preamble: Int by def.preamble_def
 	/*get() = preamble_def.getValue(buffer)
 	set(value) = preamble_def.setValue(value,buffer)*/
+	var rtcm3hdr_reserved:Int by def.reserved0_def
 	var message_length: Int by def.message_length_def
 	var message_id: Int by def.message_id_def
 

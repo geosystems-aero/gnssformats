@@ -21,18 +21,18 @@ abstract class RtcmCommonDef_1009_1012<BINDING : RtcmCommon_1009_1012<SB>, out S
 
 abstract class RtcmCommon_1009_1012<out SB : RtcmSatCommon_1009_1012>(final override val def: RtcmCommonDef_1009_1012<*, SB>,
                                                                       bb: ByteBuffer, offset: Int) : Rtcm3Message(def, bb, offset) {
-	val refstn_id: Int by def.refstn_id_def
-	val glo_epoch: Int by def.glo_epoch_def
-	val synch_glo: Boolean by def.synch_glo_def
-	val num_sat: Int by def.num_sat_def
-	val glo_div_smooth: Boolean by def.glo_div_smooth_def
-	val glo_smooth_int: Int by def.glo_smooth_int_def
+	var refstn_id: Int by def.refstn_id_def
+	var glo_epoch: Int by def.glo_epoch_def
+	var synch_glo: Boolean by def.synch_glo_def
+	var num_sat: Int by def.num_sat_def
+	var glo_div_smooth: Boolean by def.glo_div_smooth_def
+	var glo_smooth_int: Int by def.glo_smooth_int_def
 
 	val sats: List<SB> by def.sats_def
 	fun getSat(index: Int) = def.sats_def.getItem(this, index)
 
 	override fun bodyToString(): String {
-		return String.format(Locale.ENGLISH, ",%d,%s,%s,%d,%s,%d", refstn_id,
+		return String.format(Locale.ENGLISH, "%d,%s,%s,%d,%s,%d", refstn_id,
 				glo_epoch, synch_glo, num_sat,
 				glo_div_smooth, glo_smooth_int) +
 				if (num_sat == 0) "" else ";${sats.joinToString(";")}"
@@ -226,5 +226,14 @@ class Rtcm1012(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1009_1012<Rtcm1012.
 
 	companion object : RtcmCommonDef_1009_1012<Rtcm1012, Sat1012>(Sat1012.Companion, 1012) {
 		override fun binding(bb: ByteBuffer, structOffset: Int): Rtcm1012 = Rtcm1012(bb, structOffset)
+
+		fun allocate(nsats:Int):Rtcm1012 {
+			val bb0 = ByteBuffer.allocate(minFixedSize())
+			val m0 = Rtcm1012(bb0)
+			m0.num_sat = nsats
+			val bb = ByteBuffer.allocate(byteSize(m0))
+			return Rtcm1012(bb)
+		}
+
 	}
 }

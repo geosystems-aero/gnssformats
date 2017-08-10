@@ -66,6 +66,8 @@ class Rtcm1006(bb:ByteBuffer, bitOffset: Int = 0): RtcmCommon_1005_1006(Rtcm1006
 	companion object : RtcmCommonDef_1005_1006<Rtcm1006>(1006){
 		val ant_hgt_def = DF028()
 		override fun binding(bb: ByteBuffer, structOffset: Int) = Rtcm1006(bb, structOffset)
+
+		fun allocate():Rtcm1006 = Rtcm1006(ByteBuffer.allocate(minFixedSize()))
 	}
 }
 

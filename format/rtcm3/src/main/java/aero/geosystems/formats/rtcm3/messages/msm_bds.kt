@@ -10,7 +10,7 @@ abstract class RtcmMsmBeidouDef<BINDING : RtcmMsmCommon<Long, BINDING>>(mid_cons
 		RtcmMsmCommonDef<Long, BINDING>(SatSystem.BDS, mid_const - 1120, mid_const) {
 	override fun gnss_epoch_def_gen(): ReadWriteProperty<StructBinding, Long> = DF427()
 	override fun getGpstime(epoch_time: Long, ref_gpstime: Long): Long {
-		return GnssUtils.addGuessedWeek(ref_gpstime,epoch_time+14000)
+		return GnssUtils.addGuessedWeek(ref_gpstime,GnssUtils.bdt2gps(epoch_time+14000))
 	}
 }
 

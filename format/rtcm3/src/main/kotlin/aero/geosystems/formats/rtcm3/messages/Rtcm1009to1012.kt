@@ -3,7 +3,6 @@ package aero.geosystems.formats.rtcm3.messages
 import aero.geosystems.formats.rtcm3.Rtcm3Message
 import aero.geosystems.formats.rtcm3.Rtcm3MessageDef
 import aero.geosystems.formats.rtcm3.Rtcm3StructDef
-import aero.geosystems.formats.rtcm3.Rtcm3StructDef.Companion.LIGHTMS
 import aero.geosystems.formats.rtcm3.formatAs
 import aero.geosystems.gnss.GnssConstants
 import java.nio.ByteBuffer
@@ -124,9 +123,9 @@ class Rtcm1010(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1009_1012<Rtcm1010.
 		var l1Pseudorange: Double
 			get() = getL1Pseudorange(l1psr_amb)
 			set(value) {
-				val ambig = (value / LIGHTMS).toLong()
+				val ambig = (value / Rtcm3StructDef.LIGHT2MS).toLong()
 				l1psr_amb_raw = ambig
-				l1psr = value - ambig * LIGHTMS
+				l1psr = value - ambig * Rtcm3StructDef.LIGHT2MS
 			}
 
 		var l1Phaserange: Double
@@ -174,9 +173,9 @@ class Rtcm1012(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1009_1012<Rtcm1012.
 		var l1Pseudorange: Double
 			get() = getL1Pseudorange(l1psr_amb)
 			set(value) {
-				val ambig = (value / LIGHTMS).toLong()
+				val ambig = (value / Rtcm3StructDef.LIGHT2MS).toLong()
 				l1psr_amb_raw = ambig
-				l1psr = value - ambig * LIGHTMS
+				l1psr = value - ambig * Rtcm3StructDef.LIGHT2MS
 			}
 
 		var l1Phaserange: Double

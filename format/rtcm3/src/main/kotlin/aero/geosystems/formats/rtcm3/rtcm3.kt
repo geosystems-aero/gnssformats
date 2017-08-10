@@ -48,18 +48,20 @@ abstract class Rtcm3MessageDef<BINDING : StructBinding>(val mid_const: Int) : Rt
 	val crc_def = tailMember { alignMember(8) { UIntMember(24) } }
 }
 
-abstract class Rtcm3Message(def: Rtcm3MessageDef<*>, bb: ByteBuffer, offset: Int) : StructBinding(def, bb, offset) {
-	var preamble: Int by def.preamble_def
+abstract class Rtcm3Message(_def: Rtcm3MessageDef<*>, bb: ByteBuffer, offset: Int) : StructBinding(_def, bb, offset) {
+	var preamble: Int by _def.preamble_def
 	/*get() = preamble_def.getValue(buffer)
 	set(value) = preamble_def.setValue(value,buffer)*/
-	var rtcm3hdr_reserved:Int by def.reserved0_def
-	var message_length: Int by def.message_length_def
-	var message_id: Int by def.message_id_def
+	var rtcm3hdr_reserved:Int by _def.reserved0_def
+	var message_length: Int by _def.message_length_def
+	var message_id: Int by _def.message_id_def
 
-	var crc: Int by def.crc_def
+	var crc: Int by _def.crc_def
 
 	val totalMessageSize: Int
-		get() = ((def as Rtcm3MessageDef).crc_def.pos.end(this) + 7) / 8
+		get() = (def.crc_def.pos.end(this) + 7) / 8
+
+	override val def: Rtcm3MessageDef<*> = _def
 
 	override fun toString(): String {
 		return "RTCM$message_id,${bodyToString()};" + String.format("%06X", crc)
@@ -69,6 +71,15 @@ abstract class Rtcm3Message(def: Rtcm3MessageDef<*>, bb: ByteBuffer, offset: Int
 	fun calcCrc(): Int {
 		return rtcm3_crc(buffer, structOffset / 8, totalMessageSize - 3)
 	}
+
+	fun complete() {
+		preamble = 0xD3
+		rtcm3hdr_reserved = 0
+		message_length = totalMessageSize-6
+		message_id = def.mid_const
+		crc = calcCrc()
+	}
+
 }
 
 class Rtcm3UnknownMessage(bb: ByteBuffer, offset: Int = 0) : Rtcm3Message(Companion, bb, offset) {

@@ -589,12 +589,12 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	/**
 	 * GNSS Satellite mask, bit(64)
 	 */
-	fun DF394() = BitMaskMember(64)
+	fun DF394() = BitMaskMember(64,true)
 
 	/**
 	 * GNSS Signal mask, bit(32)
 	 */
-	fun DF395() = BitMaskMember(32)
+	fun DF395() = BitMaskMember(32,true)
 
 	inner class DF396PosRef(prev: BitRef?, val df396: DF396, alignment: Int) : BitRef(prev, null, alignment) {
 		override fun calcBitSize(binding: StructBinding): Int {
@@ -614,11 +614,12 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 		}
 
 		override fun setValue(binding: StructBinding, value: BitSet) {
-			writeBitMask(binding.buffer, pos.start(binding), pos.calcBitSize(binding), value)
+			binding.clearCaches()
+			writeBitMask(binding.buffer, pos.start(binding,false), pos.calcBitSize(binding), value)
 		}
 	}
 
-	inner class MsmMaskFixedArrayPosRef(prev: BitRef?, val member: MsmMaskFixedArrayMember<*,*>, alignment: Int) : BitRef(prev, null, alignment) {
+	inner class MsmMaskFixedArrayPosRef(prev: BitRef?, val member: MsmMaskFixedArrayMember<*, *>, alignment: Int) : BitRef(prev, null, alignment) {
 		override fun calcBitSize(binding: StructBinding): Int {
 			return count(binding) * member.bitSize
 		}
@@ -634,13 +635,14 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 				pos.count(binding)
 
 		override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: ARRAY) {
-			setValue(thisRef,value)
+			setValue(thisRef, value)
 		}
 
 		abstract fun setValue(binding: StructBinding, value: ARRAY)
 
 		protected fun getULong(index: Int, binding: StructBinding): Long =
 				readBits(binding.buffer, pos.start(binding) + bitSize * index, bitSize)
+
 		protected fun getSLong(index: Int, binding: StructBinding): Long =
 				toSigned(getULong(index, binding), bitSize)
 
@@ -690,13 +692,13 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 
 	inner class MsmMaskLinearFloatArray(
 			mask_def: BitMaskReturningMember, val unsigned: Boolean, bitSize: Int, val scale: Double = 1.0, val shift: Double = 0.0
-	) : MsmMaskFixedArrayMember<DoubleArray,Double>(mask_def, bitSize) {
+	) : MsmMaskFixedArrayMember<DoubleArray, Double>(mask_def, bitSize) {
 		override fun getValue(binding: StructBinding): DoubleArray {
-			return DoubleArray(count(binding)){getItem(it, binding)}
+			return DoubleArray(count(binding)) { getItem(it, binding) }
 		}
 
 		override fun setValue(binding: StructBinding, value: DoubleArray) {
-			for (i in value.indices) setItem(i, binding,value[i])
+			for (i in value.indices) setItem(i, binding, value[i])
 		}
 
 		override fun getItem(index: Int, binding: StructBinding): Double {
@@ -704,25 +706,25 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 		}
 
 		override fun setItem(index: Int, binding: StructBinding, value: Double) {
-			setLong(index,binding,lfset(scale,shift,value))
+			setLong(index, binding, lfset(scale, shift, value))
 		}
 	}
 
-	inner class MsmMaskBoolArray(mask_def:BitMaskReturningMember):MsmMaskFixedArrayMember<BooleanArray,Boolean>(mask_def,1) {
+	inner class MsmMaskBoolArray(mask_def: BitMaskReturningMember) : MsmMaskFixedArrayMember<BooleanArray, Boolean>(mask_def, 1) {
 		override fun getValue(binding: StructBinding): BooleanArray {
-			return BooleanArray(count(binding)){getItem(it, binding)}
+			return BooleanArray(count(binding)) { getItem(it, binding) }
 		}
 
 		override fun setValue(binding: StructBinding, value: BooleanArray) {
-			for (i in value.indices) setItem(i, binding,value[i])
+			for (i in value.indices) setItem(i, binding, value[i])
 		}
 
 		override fun getItem(index: Int, binding: StructBinding): Boolean {
-			return getULong(index,binding)!=0L
+			return getULong(index, binding) != 0L
 		}
 
 		override fun setItem(index: Int, binding: StructBinding, value: Boolean) {
-			setLong(index,binding,if (value)1L else 0L)
+			setLong(index, binding, if (value) 1L else 0L)
 		}
 	}
 
@@ -881,5 +883,60 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	companion object {
 		const val LIGHTMS = 299792458.0 / 1000.0
 		const val LIGHT2MS = 2 * LIGHTMS
+
+		data class DFLocktimeIndicator(val minRaw: Int, val maxRaw: Int,
+		                               val multiplier: Int, val shift: Int,
+		                               val minTime: Int) {
+			constructor(raw: Int, minTime: Int) : this(raw, raw, minTime, 0, minTime)
+			constructor(minRaw: Int, maxRaw: Int, multiplier: Int, shift: Int) : this(
+					minRaw, maxRaw,
+					multiplier, shift,
+					minRaw * multiplier + shift)
+			fun toMinTime(i:Int) = i*multiplier+shift
+			fun toIndicator(time:Int) = if (multiplier==0)minRaw else (time-shift)/multiplier
+		}
+
+		val DF402_INDICATORS = arrayOf(
+				DFLocktimeIndicator(0, 0),
+				DFLocktimeIndicator(1, 32),
+				DFLocktimeIndicator(2, 64),
+				DFLocktimeIndicator(3, 128),
+				DFLocktimeIndicator(4, 256),
+				DFLocktimeIndicator(5, 512),
+				DFLocktimeIndicator(6, 1024),
+				DFLocktimeIndicator(7, 2048),
+				DFLocktimeIndicator(8, 4096),
+				DFLocktimeIndicator(9, 8192),
+				DFLocktimeIndicator(10, 16384),
+				DFLocktimeIndicator(11, 32768),
+				DFLocktimeIndicator(12, 65536),
+				DFLocktimeIndicator(13, 131072),
+				DFLocktimeIndicator(14, 262144),
+				DFLocktimeIndicator(15, 524288)
+		)
+		val DF407_INDICATORS = arrayOf(
+				DFLocktimeIndicator(0, 63, 1, 0),
+				DFLocktimeIndicator(64, 95, 2, -64),
+				DFLocktimeIndicator(96, 127, 4, -256),
+				DFLocktimeIndicator(128, 159, 8, -768),
+				DFLocktimeIndicator(160, 191, 16, -2048),
+				DFLocktimeIndicator(192, 223, 32, -5120),
+				DFLocktimeIndicator(224, 255, 64, -12288),
+				DFLocktimeIndicator(256, 287, 128, -28672),
+				DFLocktimeIndicator(288, 319, 256, -65536),
+				DFLocktimeIndicator(320, 351, 512, -147456),
+				DFLocktimeIndicator(352, 383, 1024, -327680),
+				DFLocktimeIndicator(384, 415, 2048, -720896),
+				DFLocktimeIndicator(416, 447, 4096, -1572864),
+				DFLocktimeIndicator(448, 479, 8192, -3407872),
+				DFLocktimeIndicator(480, 511, 16384, -7340032),
+				DFLocktimeIndicator(512, 543, 32768, -15728640),
+				DFLocktimeIndicator(544, 575, 65536, -33554432),
+				DFLocktimeIndicator(576, 607, 131072, -71303168),
+				DFLocktimeIndicator(608, 639, 262144, -150994944),
+				DFLocktimeIndicator(640, 671, 524288, -318767104),
+				DFLocktimeIndicator(672, 703, 1048576, -671088640),
+				DFLocktimeIndicator(704, 67108864)
+		)
 	}
 }

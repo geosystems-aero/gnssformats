@@ -19,17 +19,17 @@ enum class MsmSignalCode(val code: Int, val signal: RawSignal?, val df016: Int?)
 	GPS_L1_C_D(30, /*RawSignal.GPS_L1_C_D*/null, null),
 	GPS_L1_C_P(31, /*RawSignal.GPS_L1_C_P*/null, null),
 	GPS_L1_C_DP(32, /*RawSignal.GPS_L1_C_DP*/null, null),
-	// TODO BDS QZS GAL
+
 	GLO_L1C(2, RawSignal.GLO_L1_CA, null),
 	GLO_L1P(3, RawSignal.GLO_L1_P, null),
 	GLO_L2C(8, RawSignal.GLO_L2_CA, null),
 	GLO_L2P(9, RawSignal.GLO_L2_P, null),
 
 	GAL_E1C(2, RawSignal.GAL_E1C, null),
-	GAL_E1A(3, null/*RawSignal.GAL_E1A*/, null),
+	GAL_E1A(3, RawSignal.GAL_E1A, null),
 	GAL_E1B(4, RawSignal.GAL_E1B, null),
 	GAL_E1BC(5, RawSignal.GAL_E1BC, null),
-	GAL_E1ABC(6, null/*RawSignal.GAL_E1CABC*/, null),
+	GAL_E1ABC(6, RawSignal.GAL_E1ABC, null),
 	GAL_E6C(8, null/*RawSignal.GAL_E6C*/, null),
 	GAL_E6A(9, null/*RawSignal.GAL_E6A*/, null),
 	GAL_E6B(10, null/*RawSignal.GAL_E6B*/, null),
@@ -70,5 +70,11 @@ enum class MsmSignalCode(val code: Int, val signal: RawSignal?, val df016: Int?)
 	BDS_2IQ(16,null/*RawSignal.BDS_B2IQ*/,null);
 	companion object {
 		fun byCode(gnss: SatSystem,code: Int) = values().find { it.code==code && gnss == it.signal?.gnss }
+		fun bySignal(signal: RawSignal) =
+				values().find { it.signal == signal } ?: when (signal) {
+					RawSignal.GPS_L2_PY_CORRELATED -> GPS_L2W
+					else -> null
+				}
+
 	}
 }

@@ -16,4 +16,4 @@ include 'services:webservice'
 */
 
 rootProject.name = 'gnssformats'
-include 'core','format/rtcm3','GNSS'
+include 'core','format/rtcm3','format/jps','GNSS'

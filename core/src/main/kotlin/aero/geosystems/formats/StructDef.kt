@@ -225,6 +225,13 @@ abstract class StructDef<out BINDING : StructBinding> {
 		override fun calcBitSize(binding: StructBinding): Int = bitSize
 	}
 
+	inner class FnSizePosRef(prev:BitRef?, val body_length:(binding:StructBinding)->Int) : BitRef(prev,null,0) {
+		override fun calcBitSize(binding: StructBinding): Int {
+			return body_length(binding)*8
+		}
+
+	}
+
 	private val frontMembers = ArrayList<Member<*>>()
 	private val tailMembers = ArrayList<Member<*>>()
 	val members: List<Member<*>> get() = Collections.unmodifiableList(frontMembers + tailMembers)
@@ -501,6 +508,17 @@ abstract class StructDef<out BINDING : StructBinding> {
 		fun setCounterFor(binding: StructBinding, value: ByteArray) {
 			count.setValue(value.size.toLong()-countShift, binding)
 		}
+	}
+
+	inner class FixedStringMember(val count: Int, val charset: Charset = Charsets.UTF_8):FixedSizeMember<String>(count*8),ReadWriteProperty<StructBinding, String> {
+		override fun getValue(binding: StructBinding): String {
+			return readBytes(binding.buffer, pos.start(binding), count*8).toString(charset)
+		}
+
+		override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: String) {
+			writeBytes(thisRef.buffer, pos.start(thisRef), count*8, value.toByteArray(charset).copyOf(count))
+		}
+
 	}
 
 	inner class VarStringMember(val count: NumberMember<*>, val countShift: Int=0,val charset: Charset = Charsets.UTF_8) : Member<String>(), ReadWriteProperty<StructBinding, String> {

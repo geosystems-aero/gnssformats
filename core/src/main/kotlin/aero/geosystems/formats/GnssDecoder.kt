@@ -75,9 +75,9 @@ abstract class AbstractGnssDecoder<T>(
 	open val byteOrder: ByteOrder get() = ByteOrder.LITTLE_ENDIAN
 
 	@Suppress("LeakingThis")
-	protected val headerBuffer = ByteBuffer.allocateDirect(minHeaderLength).order(byteOrder)
+	protected val headerBuffer = ByteBuffer.allocateDirect(minHeaderLength).order(byteOrder)!!
 	@Suppress("LeakingThis")
-	protected var messageBuffer = ByteBuffer.allocate(0).order(byteOrder)
+	protected var messageBuffer = ByteBuffer.allocate(0).order(byteOrder)!!
 
 
 	override val currentBufferSize: Int

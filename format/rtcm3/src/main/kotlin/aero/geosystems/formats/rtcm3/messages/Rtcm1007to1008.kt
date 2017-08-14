@@ -32,7 +32,7 @@ class Rtcm1007(bb: ByteBuffer, bitOffset:Int): RtcmCommon_1007_1008(Companion,bb
 	}
 }
 
-class Rtcm1008(bb: ByteBuffer, bitOffset:Int): RtcmCommon_1007_1008(Companion,bb,bitOffset) {
+class Rtcm1008(bb: ByteBuffer, bitOffset:Int=0): RtcmCommon_1007_1008(Companion,bb,bitOffset) {
 	var serial_number_counter:Int by serial_number_counter_def
 	var serial_number:String by serial_number_def
 
@@ -46,5 +46,14 @@ class Rtcm1008(bb: ByteBuffer, bitOffset:Int): RtcmCommon_1007_1008(Companion,bb
 		val serial_number_counter_def = DF032()
 		val serial_number_def = DF033(serial_number_counter_def)
 		override fun binding(bb: ByteBuffer, structOffset: Int) = Rtcm1008(bb, structOffset)
+
+		fun allocate(antenna_descriptor_length:Int,antenna_serial_number_length:Int):Rtcm1008 {
+			val bb0 = ByteBuffer.allocate(minFixedSize()+antenna_descriptor_length+antenna_serial_number_length)
+			val msg0 = Rtcm1008(bb0)
+			msg0.descriptor_counter = antenna_descriptor_length
+			msg0.serial_number_counter = antenna_serial_number_length
+			if (byteSize(msg0) != bb0.limit()) return Rtcm1008(ByteBuffer.allocate(byteSize(msg0)))
+			return msg0
+		}
 	}
 }

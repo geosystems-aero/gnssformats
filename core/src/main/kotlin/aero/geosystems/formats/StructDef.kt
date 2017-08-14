@@ -1,5 +1,6 @@
 package aero.geosystems.formats
 
+import aero.geosystems.formats.utils.copyToArray
 import aero.geosystems.formats.utils.getOrPut
 import aero.geosystems.formats.utils.subByteBuffer
 import java.nio.ByteBuffer
@@ -102,7 +103,8 @@ fun flipBitSequence(arr:ByteArray,count:Int):ByteArray {
 	val n = arr.size
 	val rem = if (count%8 == 0) 8 else count%8
 	return ByteArray(n){
-		INVERSE_SUBBYTES[if (it == n-1) rem else 8][arr[it].toInt().and(0xFF)].toByte()
+		val invertor = INVERSE_SUBBYTES[if (it == n - 1) rem else 8]
+		invertor[arr[it].toInt().and(0xFF)].toByte()
 	}
 }
 fun readBitMask(buffer: ByteBuffer, offset: Int, count: Int): BitSet {
@@ -110,7 +112,15 @@ fun readBitMask(buffer: ByteBuffer, offset: Int, count: Int): BitSet {
 }
 
 fun writeBitMask(buffer: ByteBuffer, offset: Int, count: Int, value: BitSet) {
-	writeBytes(buffer, offset, count, flipBitSequence(value.toByteArray(),count))
+	val arr = value.toByteArray().let { src ->
+		if (src.size>=(count+7)/8) src
+		else {
+			val dst = ByteArray((count+7)/8)
+			System.arraycopy(src,0,dst,0,src.size)
+			dst
+		}
+	}
+	writeBytes(buffer, offset, count, flipBitSequence(arr, count))
 }
 
 fun writeBits(buffer: ByteBuffer, value: Long, offset: Int, count: Int) {
@@ -143,6 +153,7 @@ open class StructBinding(def_:StructDef<*>, val buffer: ByteBuffer, val structOf
 	internal val cached_sizes = arrayOfNulls<Int?>(def_.ref_count+1)
 	internal val cached_starts = arrayOfNulls<Int?>(def_.ref_count+1)
 	internal val cached_ends = arrayOfNulls<Int?>(def_.ref_count+1)
+	fun bufferCopy():ByteBuffer = ByteBuffer.wrap(buffer.copyToArray())
 	companion object {
 		fun <T> errAccessor(): ReadWriteProperty<Any, T> = object : ReadWriteProperty<Any, T> {
 			override operator fun getValue(thisRef: Any, property: KProperty<*>): T = error(this.javaClass)
@@ -188,7 +199,14 @@ abstract class StructDef<out BINDING : StructBinding> {
 			return (fixedStart?.plus(binding.structOffset) ?: start(binding)) + (fixedSize ?: calcBitSize(binding))
 		}
 
-		fun start(binding: StructBinding): Int = binding.cached_starts.getOrPut(ref_index){calcStart(binding)}
+		fun start(binding: StructBinding, useCache:Boolean=true): Int {
+			if (!useCache) {
+				val v = calcStart(binding)
+				binding.cached_starts[ref_index] = v
+				return v
+			}
+			return binding.cached_starts.getOrPut(ref_index){calcStart(binding)}
+		}
 		fun bitSize(binding: StructBinding): Int = binding.cached_sizes.getOrPut(ref_index){calcBitSize(binding)}
 		fun end(binding: StructBinding): Int = binding.cached_ends.getOrPut(ref_index){calcEnd(binding)}
 
@@ -419,7 +437,7 @@ abstract class StructDef<out BINDING : StructBinding> {
 		abstract fun setValue(binding: StructBinding,value:BitSet)
 	}
 
-	inner class BitMaskMember(val bitSize: Int) : BitMaskReturningMember() {
+	inner class BitMaskMember(val bitSize: Int, val flushing:Boolean = false) : BitMaskReturningMember() {
 		override val pos: BitRef = FixedSizeRef(prev?.pos, bitSize, mAlignment)
 
 		override fun getValue(binding: StructBinding): BitSet {
@@ -427,6 +445,7 @@ abstract class StructDef<out BINDING : StructBinding> {
 		}
 
 		override fun setValue(binding: StructBinding, value: BitSet) {
+			if (flushing) binding.clearCaches()
 			writeBitMask(binding.buffer, pos.start(binding), bitSize, value)
 		}
 

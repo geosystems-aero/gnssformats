@@ -73,6 +73,9 @@ enum class MsmSignalCode(val code: Int, val signal: RawSignal?, val df016: Int?)
 		fun bySignal(signal: RawSignal) =
 				values().find { it.signal == signal } ?: when (signal) {
 					RawSignal.GPS_L2_PY_CORRELATED -> GPS_L2W
+					RawSignal.BDS_B1D2 -> BDS_1I
+					RawSignal.BDS_B2D2 -> BDS_2I
+					RawSignal.BDS_B3D2 -> BDS_3I
 					else -> null
 				}
 

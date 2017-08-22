@@ -25,10 +25,11 @@ abstract class JpsMessage(_def:JpsMessageDef<*>, bb:ByteBuffer, offset:Int) : St
 			message_id_raw = value?.code ?:""
 		}
 	var length_of_body: Int
-		get() = length_of_body_raw.toInt()
+		get() = length_of_body_raw.toInt(16)
 		set(value) {
-			length_of_body_raw = value.toString().padStart(3,'0')
+			length_of_body_raw = value.toString(16).toUpperCase().padStart(3,'0')
 		}
+	val totalMessageLength get() = length_of_body+5
 
 	open fun loaded() {
 		// default - do nothing

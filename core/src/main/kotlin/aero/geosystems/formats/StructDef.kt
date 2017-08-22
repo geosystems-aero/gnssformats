@@ -401,6 +401,27 @@ abstract class StructDef<out BINDING : StructBinding> {
 		val maxDouble: Double = (if (unsigned) maxUnsigned * scale else maxSigned * scale) + shift
 	}
 
+	inner class Float32Member(): NumberMember<Float>(32), ReadWriteProperty<StructBinding,Float> {
+		override fun getValue(binding: StructBinding): Float {
+			return java.lang.Float.intBitsToFloat(getUnsigned(binding).toInt())
+		}
+
+		override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: Float) {
+			setValue(java.lang.Float.floatToIntBits(value).toLong(),thisRef)
+		}
+
+	}
+
+	inner class Float64Member(): NumberMember<Double>(64), ReadWriteProperty<StructBinding,Double> {
+		override fun getValue(binding: StructBinding): Double {
+			return java.lang.Double.longBitsToDouble(getSigned(binding))
+		}
+
+		override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: Double) {
+			setValue(java.lang.Double.doubleToLongBits(value),thisRef)
+		}
+	}
+
 	inner class LinearLongMember(val unsigned: Boolean, bitSize: Int, val scale: Long = 1, val shift: Long = 0) :
 			NumberMember<Long>(bitSize), ReadWriteProperty<StructBinding, Long> {
 		val raw = object : ReadWriteProperty<StructBinding, Long> {

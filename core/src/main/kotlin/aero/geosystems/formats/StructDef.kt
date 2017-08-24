@@ -225,9 +225,9 @@ abstract class StructDef<out BINDING : StructBinding> {
 		override fun calcBitSize(binding: StructBinding): Int = bitSize
 	}
 
-	inner class FnSizePosRef(prev:BitRef?, val body_length:(binding:StructBinding)->Int) : BitRef(prev,null,0) {
+	inner class FnSizePosRef(prev: BitRef?, val elementBitSize:Int=8, alignment: Int = 0, val countFn: (binding: StructBinding) -> Int) : BitRef(prev,null,alignment) {
 		override fun calcBitSize(binding: StructBinding): Int {
-			return body_length(binding)*8
+			return countFn(binding)*elementBitSize
 		}
 
 	}
@@ -498,36 +498,52 @@ abstract class StructDef<out BINDING : StructBinding> {
 		}
 	}
 
-	inner class VarByteArrayMember(val count: NumberMember<*>, val countShift: Int = 0) : Member<ByteArray>(), ReadWriteProperty<StructBinding, ByteArray> {
-		val safe = object:ReadWriteProperty<StructBinding,ByteArray> {
-			override fun getValue(thisRef: StructBinding, property: KProperty<*>): ByteArray {
-				val n = countShift + count.getUnsigned(thisRef).toInt()
-				val start = pos.start(thisRef)
-				val max = (thisRef.buffer.limit()*8-start)/8
-				return readBytes(thisRef.buffer,
-						start,
-						Math.min(n,max)*8)
-			}
+	inner class VarByteArrayMember(val countFn: (StructBinding)->Int) : Member<ByteArray>(), ReadWriteProperty<StructBinding, ByteArray> {
+		constructor(count: NumberMember<*>, countShift: Int = 0) : this({count.getUnsigned(it).toInt() + countShift})
+		val safe: ReadWriteProperty<StructBinding, ByteArray> by lazy {
+			object : ReadWriteProperty<StructBinding, ByteArray> {
+				override fun getValue(thisRef: StructBinding, property: KProperty<*>): ByteArray {
+					val n = countFn(thisRef)
+					val start = pos.start(thisRef)
+					val max = (thisRef.buffer.limit() * 8 - start) / 8
+					return readBytes(thisRef.buffer,
+							start,
+							Math.min(n, max) * 8)
+				}
 
-			override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: ByteArray) {
-				throw UnsupportedOperationException("not implemented") //TODO implement ${CLASS_NAME}.setValue
+				override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: ByteArray) {
+					val n1 = countFn(thisRef)
+					val start = pos.start(thisRef)
+					val n2 = (thisRef.buffer.limit()*8 - start) / 8
+					val n = Math.min(n1,n2)
+					writeBytes(thisRef.buffer, pos.start(thisRef), n*8, value.copyOf(n))
+				}
 			}
 		}
-		override val pos: BitRef = ArraySizeRef(prev?.pos, 8, count, countShift, mAlignment)
+		val ints: ReadWriteProperty<StructBinding, IntArray> by lazy {
+			object : ReadWriteProperty<StructBinding, IntArray> {
+				override fun getValue(thisRef: StructBinding, property: KProperty<*>): IntArray {
+					val a = this@VarByteArrayMember.getValue(thisRef)
+					return IntArray(a.size){a[it].toInt().and(0xff)}
+				}
+
+				override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: IntArray) {
+					this@VarByteArrayMember.setValue(thisRef,property,ByteArray(value.size){value[it].toByte()})
+				}
+			}
+		}
+		override val pos: BitRef = FnSizePosRef(prev?.pos, 8, mAlignment, countFn)
+				//ArraySizeRef(prev?.pos, 8, count, countShift, mAlignment)
 		override fun getValue(binding: StructBinding): ByteArray {
-			val n = countShift + count.getUnsigned(binding).toInt()
+			val n = countFn(binding)
 			return readBytes(binding.buffer,
 					pos.start(binding),
 					n*8)
 		}
 
 		override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: ByteArray) {
-			val n = countShift + count.getUnsigned(thisRef).toInt()
+			val n = countFn(thisRef)
 			writeBytes(thisRef.buffer, pos.start(thisRef), n*8, value.copyOf(n))
-		}
-
-		fun setCounterFor(binding: StructBinding, value: ByteArray) {
-			count.setValue(value.size.toLong()-countShift, binding)
 		}
 	}
 

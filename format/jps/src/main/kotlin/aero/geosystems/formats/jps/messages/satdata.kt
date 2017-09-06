@@ -50,7 +50,7 @@ class GlonassNumbers(bb: ByteBuffer,bitOffset: Int): JpsMessage(Companion, bb, b
 }
 
 class SatelliteElevations(bb: ByteBuffer,bitOffset: Int): JpsMessage(Companion, bb, bitOffset) {
-	var elev:IntArray by elev_def
+	var elev:Array<Int?> by elev_def
 	var cs:Int by cs_def
 	companion object : JpsMessageDef<SatelliteElevations>(){
 		override fun binding(bb: ByteBuffer, structOffset: Int) = SatelliteElevations(bb,structOffset)
@@ -60,7 +60,7 @@ class SatelliteElevations(bb: ByteBuffer,bitOffset: Int): JpsMessage(Companion, 
 }
 
 class SatelliteAzimuths(bb: ByteBuffer,bitOffset: Int): JpsMessage(Companion, bb, bitOffset) {
-	var azim:IntArray by azim_def
+	var azim:Array<Int?> by azim_def
 	var cs:Int by cs_def
 	companion object : JpsMessageDef<SatelliteAzimuths>(){
 		override fun binding(bb: ByteBuffer, structOffset: Int) = SatelliteAzimuths(bb,structOffset)

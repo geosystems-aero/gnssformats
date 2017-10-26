@@ -21,6 +21,11 @@ class Rtcm1033(bb:ByteBuffer, offset:Int = 0): Rtcm3Message(Companion, bb, offse
 	var receiver_firmware_version by receiver_firmware_version_def
 	var receiver_serial_number_counter by receiver_serial_number_counter_def
 	var receiver_serial_number by receiver_serial_number_def
+
+	override fun bodyToString(): String {
+		return "$refstn_id,'$antenna_descriptor',$antenna_setup_id,'$antenna_serial_number','$receiver_type_descriptor','$receiver_firmware_version','$receiver_serial_number'"
+	}
+
 	companion object : Rtcm3MessageDef<Rtcm1033>(1033){
 		override fun binding(bb: ByteBuffer, structOffset: Int) = Rtcm1033(bb,structOffset)
 

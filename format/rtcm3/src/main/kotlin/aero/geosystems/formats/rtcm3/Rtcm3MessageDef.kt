@@ -871,7 +871,74 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 
 	fun DF420array(gnss_sat_mask_def: BitMaskReturningMember) = MsmMaskBoolArray(gnss_sat_mask_def)
 
-	// TODO DF421-DF426
+	/**
+	 * GLONASS Code-Phase Bias Indicator
+	 *
+	 * 0 - GLONASS code and phase measurements are not aligned to same epoch
+	 * 1 - aligned
+	 */
+	fun DF421() = BitMember()
+
+	/**
+	 * GLONASS FDMA Signals Mask
+	 *
+	 * bit 0: DF423 present
+	 * bit 1: DF424 present
+	 * bit 2: DF425 present
+	 * bit 3: DF426 present
+	 */
+	fun DF422() = BitMaskMember(4, true)
+
+	inner class ConditionalLinearFloatPosRef(prev: BitRef?,
+	                                         val member: ConditionalLinearFloatMember,
+	                                         alignment:Int): BitRef(prev,null,alignment) {
+		fun present(binding: StructBinding):Boolean = member.srcMask.getValue(binding)[member.srcBit]
+		override fun calcBitSize(binding: StructBinding) = if (present(binding)) member.bitSize else 0
+	}
+	inner class ConditionalLinearFloatMember(
+			val srcMask: BitMaskMember,
+			val srcBit: Int,
+			val unsigned: Boolean, val bitSize: Int, val scale: Double = 1.0, val shift: Double = 0.0) :
+			Member<Double?>(), ReadWriteProperty<StructBinding, Double?> {
+
+		override val pos: ConditionalLinearFloatPosRef = ConditionalLinearFloatPosRef(prev?.pos,this,mAlignment)
+
+		override fun getValue(binding: StructBinding): Double? {
+			if (!pos.present(binding)) return null
+			var raw = readBits(binding.buffer, pos.start(binding), bitSize)
+			if (!unsigned) raw = toSigned(raw,bitSize)
+			return lfget(scale, shift, raw)
+		}
+
+		override operator fun setValue(thisRef: StructBinding, property: KProperty<*>, value: Double?) {
+			if (pos.present(thisRef) && value != null) writeBits(thisRef.buffer, lfset(scale, shift, value), pos.start(thisRef), bitSize)
+		}
+	}
+
+	/**
+	 * GLONASS L1 C/A Code-Phase Bias
+	 *
+	 * Offset between L1 C/A Pseudorange and L1 C/A PhaseRange in meters.
+	 * If DF421=0: Aligned L1 PhaseRange   = Full L1 PhaseRange + GLONASS L1 C/A Code-Phase Bias
+	 * If DF421=1: Unaligned L1 PhaseRange = Full L1 PhaseRange - GLONASS L1 C/A Code-Phase Bias
+	 * 0x8000: Invalid value (unknown or outside of range)
+	 */
+	fun DF423(df422: BitMaskMember) = ConditionalLinearFloatMember(df422, 0, false, 16, 0.02)
+
+	/**
+	 * GLONASS L1 P Code-Phase Bias
+	 */
+	fun DF424(df422: BitMaskMember) = ConditionalLinearFloatMember(df422, 1, false, 16, 0.02)
+
+	/**
+	 * GLONASS L2 C/A Code-Phase Bias
+	 */
+	fun DF425(df422: BitMaskMember) = ConditionalLinearFloatMember(df422, 2, false, 16, 0.02)
+
+	/**
+	 * GLONASS L2 P Code-Phase Bias
+	 */
+	fun DF426(df422: BitMaskMember) = ConditionalLinearFloatMember(df422, 3, false, 16, 0.02)
 
 	/**
 	 * BDS Epoch Time (TOW), 0-604,799,999 ms, uint30 x 1 ms

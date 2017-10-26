@@ -466,6 +466,18 @@ abstract class StructDef<out BINDING : StructBinding> {
 	}
 
 	inner class BitMaskMember(val bitSize: Int, val flushing:Boolean = false) : BitMaskReturningMember() {
+		val asLong = object: ReadWriteProperty<StructBinding,Long> {
+			override fun getValue(thisRef: StructBinding, property: KProperty<*>): Long {
+				return readBits(thisRef.buffer,pos.start(thisRef),bitSize)
+			}
+
+			override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: Long) {
+				if (flushing) thisRef.clearCaches()
+				writeBits(thisRef.buffer,value,pos.start(thisRef),bitSize)
+			}
+
+		}
+
 		override val pos: BitRef = FixedSizeRef(prev?.pos, bitSize, mAlignment)
 
 		override fun getValue(binding: StructBinding): BitSet {

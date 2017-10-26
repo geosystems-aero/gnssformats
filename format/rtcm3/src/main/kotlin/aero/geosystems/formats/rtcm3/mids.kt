@@ -61,7 +61,9 @@ val Rtcm3MessageIDs: Map<Int, Rtcm3MessageDef<out Rtcm3Message>> = mapOf(
 		1124 to Rtcm1124.Companion,
 		1125 to Rtcm1125.Companion,
 		1126 to Rtcm1126.Companion,
-		1127 to Rtcm1127.Companion
+		1127 to Rtcm1127.Companion,
+
+		1230 to Rtcm1230.Companion
 )
 val OBSERVATION_MIDS = Collections.unmodifiableSet(setOf(
 		1001,1002,1003,1004,

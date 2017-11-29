@@ -15,6 +15,8 @@ kotlin {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+    testCompile "org.jetbrains.kotlin:kotlin-test"
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit"
     compile project(':core')
     compile project(':GNSS')
 }

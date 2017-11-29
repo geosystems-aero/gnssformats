@@ -380,13 +380,14 @@ abstract class StructDef<out BINDING : StructBinding> {
 			NumberMember<Double>(bitSize), ReadWriteProperty<StructBinding, Double> {
 		val raw = object : ReadWriteProperty<StructBinding, Long> {
 			override operator fun getValue(thisRef: StructBinding, property: KProperty<*>): Long {
-				return getRawValue(thisRef)
+				return getRawValueUnsigned(thisRef)
 			}
 
 			override operator fun setValue(thisRef: StructBinding, property: KProperty<*>, value: Long) {
 				setValue(value, thisRef)
 			}
 		}
+		fun getRawValueUnsigned(binding:StructBinding) = getUnsigned(binding)
 		fun getRawValue(binding:StructBinding) = if (unsigned) getUnsigned(binding) else getSigned(binding)
 
 		override fun getValue(binding: StructBinding): Double {

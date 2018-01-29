@@ -118,7 +118,7 @@ abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val 
 	fun setL1Locktime(locktime:Int) {
 		l1locktime_ind = (0..5)
 				.firstOrNull { locktime < LLT_MAXES[it] }
-				?.let { locktime + (LLI_OFFSETS[it] shr it) }
+				?.let { (locktime + LLI_OFFSETS[it]) shr it }
 				?: 127
 	}
 
@@ -163,7 +163,7 @@ abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val 
 	fun setL2Locktime(locktime:Int) {
 		l2locktime_ind = (0..5)
 				.firstOrNull { locktime < LLT_MAXES[it] }
-				?.let { locktime + (LLI_OFFSETS[it] shr it) }
+				?.let { (locktime + LLI_OFFSETS[it]) shr it }
 				?: 127
 	}
 }
@@ -193,8 +193,8 @@ abstract class RtcmSatCommon_1001_1004(
 	override var l1cnr: Double by def.l1cnr_def ?: errDoubleAccessor
 	var l1cnr_raw: Long by def.l1cnr_def?.raw ?: errLongAccessor
 	var l2code_ind: Int by def.l2code_ind_def ?: errIntAccessor
-	override var l2l1psrdiff: Double by def.l2l1psrdiff_def ?: errDoubleAccessor
 	override var l2l1psrdiff_raw: Long by def.l2l1psrdiff_def?.raw ?: errLongAccessor
+	override var l2l1psrdiff: Double by def.l2l1psrdiff_def ?: errDoubleAccessor
 	override var l2phrl1psr: Double by def.l2phrl1psr_def ?: errDoubleAccessor
 	override var l2phrl1psr_raw: Long by def.l2phrl1psr_def?.raw ?: errLongAccessor
 	override var l2locktime_ind: Int by def.l2locktime_ind_def ?: errIntAccessor
@@ -210,6 +210,47 @@ abstract class RtcmSatCommon_1001_1004(
 		}
 		return s
 
+	}
+
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (javaClass != other?.javaClass) return false
+
+		other as RtcmSatCommon_1001_1004
+
+		if (def != other.def) return false
+		if (sat_id != other.sat_id) return false
+		if (l1code_ind != other.l1code_ind) return false
+		if (l1psr_raw != other.l1psr_raw) return false
+		if (l1phrl1psr_raw != other.l1phrl1psr_raw) return false
+		if (l1locktime_ind != other.l1locktime_ind) return false
+		if (def.hasamb && l1psr_amb_raw != other.l1psr_amb_raw) return false
+		if (def.hascnr && l1cnr_raw != other.l1cnr_raw) return false
+		if (def.hasL2 && l2code_ind != other.l2code_ind) return false
+		if (def.hasL2 && l2l1psrdiff_raw != other.l2l1psrdiff_raw) return false
+		if (def.hasL2 && l2phrl1psr_raw != other.l2phrl1psr_raw) return false
+		if (def.hasL2 && l2locktime_ind != other.l2locktime_ind) return false
+		if (def.hasL2 && def.hascnr && l2cnr_raw != other.l2cnr_raw) return false
+		return true
+	}
+
+	override fun hashCode(): Int {
+		var result = def.hashCode()
+		result = 31 * result + waveL1.hashCode()
+		result = 31 * result + def.hashCode()
+		result = 31 * result + sat_id.hashCode()
+		result = 31 * result + l1code_ind.hashCode()
+		result = 31 * result + l1psr_raw.hashCode()
+		result = 31 * result + l1phrl1psr_raw.hashCode()
+		result = 31 * result + l1locktime_ind.hashCode()
+		if (def.hasamb) result = 31 * result + l1psr_amb_raw.hashCode()
+		if (def.hascnr) result = 31 * result + l1cnr_raw.hashCode()
+		if (def.hasL2) result = 31 * result + l2code_ind.hashCode()
+		if (def.hasL2) result = 31 * result + l2l1psrdiff_raw.hashCode()
+		if (def.hasL2) result = 31 * result + l2phrl1psr_raw.hashCode()
+		if (def.hasL2) result = 31 * result + l2locktime_ind.hashCode()
+		if (def.hasL2 && def.hascnr) result = 31 * result + l2cnr_raw.hashCode()
+		return result
 	}
 }
 

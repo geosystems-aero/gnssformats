@@ -10,7 +10,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Test as test
 
-class TestInvalidDF048() {
+class TestInvalidDF048 {
 	@test fun f() {
 
 		// RTCM1012,0,49054000,false,10,false,0;

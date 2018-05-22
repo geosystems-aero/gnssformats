@@ -57,7 +57,7 @@ abstract class RtcmSatCommonDef_1001_1004<SB : RtcmSatCommon_1001_1004>(val hasa
 	val l2cnr_def = if (hascnr && hasL2) DF020() else null
 }
 
-abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val hascnr:Boolean,
+abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val hascnr:Boolean, val amb_mod:Double,
                                    def_: StructDef<*>, bb:ByteBuffer, offset:Int): StructBinding(def_,bb,offset) {
 	abstract val waveL1: Double
 	abstract val waveL2: Double
@@ -80,11 +80,13 @@ abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val 
 	abstract var l2locktime_ind: Int
 	abstract var l2cnr: Double
 
+	fun extractL1PsrAmb(l1psr:Double) = Math.floor(l1psr/amb_mod)*amb_mod
+
 	fun getL1Pseudorange(l1psr_amb: Double): Double = l1psr + l1psr_amb
 
 	fun setL1Pseudorange(@Suppress("UNUSED_PARAMETER") l1psr_amb: Double, value: Double) {
-		l1psr = value % LIGHTMS
-		if (hasamb) l1psr_amb_raw = (value / LIGHTMS).toLong()
+		l1psr = value % amb_mod
+		if (hasamb) l1psr_amb_raw = (value / amb_mod).toLong()
 	}
 
 	fun getL1Phaserange(l1psr_amb: Double): Double = getL1Pseudorange(l1psr_amb) + l1phrl1psr
@@ -170,7 +172,7 @@ abstract class Rtcm3v0RtkSatCommon(val hasL2: Boolean, val hasamb: Boolean, val 
 
 abstract class RtcmSatCommon_1001_1004(
 		override final val def: RtcmSatCommonDef_1001_1004<*>, bb: ByteBuffer, offset: Int) :
-		Rtcm3v0RtkSatCommon(def.hasL2,def.hasamb,def.hascnr,def, bb, offset) {
+		Rtcm3v0RtkSatCommon(def.hasL2,def.hasamb,def.hascnr, LIGHTMS,def, bb, offset) {
 	override val waveL1 = GnssConstants.GPS_L1_WAVELENGTH
 	override val waveL2 = GnssConstants.GPS_L2_WAVELENGTH
 	override val min_l1phrl1psrDouble: Double
@@ -268,29 +270,23 @@ class Rtcm1001(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1001.
 class Rtcm1002(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1002.Sat1002>(Companion, bb, offset) {
 	class Sat1002(bb: ByteBuffer, offset: Int) : RtcmSatCommon_1001_1004(Companion, bb, offset) {
 		var l1Pseudorange: Double
-			get() = l1psr + l1psr_amb
+			get() = getL1Pseudorange(l1psr_amb)
 			set(value) {
-				val ambig = (value / LIGHTMS).toLong()
-				l1psr_amb_raw = ambig
-				l1psr = value - ambig * LIGHTMS
+				setL1Pseudorange(extractL1PsrAmb(value),value)
 			}
 
 		var l1Phaserange: Double
-			get() = l1Pseudorange + l1phrl1psr
+			get() = getL1Phaserange(l1psr_amb)
 			set(value) {
-				var diff = value - l1Pseudorange
-				if (diff < l1phrl1psr_def.minDouble || diff > l1phrl1psr_def.maxDouble) {
-					diff %= (1500 * GnssConstants.GPS_L1_WAVELENGTH)
-					if (diff < 0) diff += 1500 * GnssConstants.GPS_L1_WAVELENGTH
-				}
-				l1phrl1psr = diff
+				setL1Phaserange(l1psr_amb, value)
 			}
 
 		var l1Phase: Double
-			get() = l1Phaserange / GnssConstants.GPS_L1_WAVELENGTH
+			get() = getL1Phase(l1psr_amb)
 			set(value) {
-				l1Phaserange = value * GnssConstants.GPS_L1_WAVELENGTH
+				setL1Phase(l1psr_amb,value)
 			}
+
 
 		companion object : RtcmSatCommonDef_1001_1004<Sat1002>(true,false) {
 			override fun binding(bb: ByteBuffer, structOffset: Int) = Sat1002(bb, structOffset)
@@ -299,6 +295,14 @@ class Rtcm1002(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1002.
 
 	companion object : RtcmCommonDef_1001_1004<Rtcm1002,Sat1002>(Sat1002.Companion,1002) {
 		override fun binding(bb: ByteBuffer, structOffset: Int) = Rtcm1002(bb, structOffset)
+
+		fun allocate(nsats:Int):Rtcm1002 {
+			val bb0 = ByteBuffer.allocate(minFixedSize())
+			val m0 = Rtcm1002(bb0)
+			m0.num_sat = nsats
+			val bb = ByteBuffer.allocate(byteSize(m0))
+			return Rtcm1002(bb)
+		}
 	}
 }
 
@@ -319,49 +323,37 @@ class Rtcm1004(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1001_1004<Rtcm1004.
 		var l1Pseudorange: Double
 			get() = getL1Pseudorange(l1psr_amb)
 			set(value) {
-				val ambig = (value / LIGHTMS).toLong()
-				l1psr_amb_raw = ambig
-				l1psr = value - ambig * LIGHTMS
+				setL1Pseudorange(extractL1PsrAmb(value),value)
 			}
 
 		var l1Phaserange: Double
-			get() = l1Pseudorange + l1phrl1psr
+			get() = getL1Phaserange(l1psr_amb)
 			set(value) {
-				var diff = value - l1Pseudorange
-				if (diff < l1phrl1psr_def.minDouble || diff > l1phrl1psr_def.maxDouble) {
-					diff %= (1500 * GnssConstants.GPS_L1_WAVELENGTH)
-					if (diff < 0) diff += 1500 * GnssConstants.GPS_L1_WAVELENGTH
-				}
-				l1phrl1psr = diff
+				setL1Phaserange(l1psr_amb, value)
 			}
 
 		var l2Pseudorange: Double
-			get() = l1Pseudorange + l2l1psrdiff
+			get() = getL2Pseudorange(l1psr_amb)
 			set(value) {
-				l2l1psrdiff = value - l1Pseudorange
+				setL2Pseudorange(l1psr_amb,value)
 			}
 
 		var l2Phaserange: Double
-			get() = l1Pseudorange + l2phrl1psr
+			get() = getL2Phaserange(l1psr_amb)
 			set(value) {
-				var diff = value - l1Pseudorange
-				if (diff < l2phrl1psr_def!!.minDouble || diff > l2phrl1psr_def.maxDouble) {
-					diff %= (1500 * GnssConstants.GPS_L2_WAVELENGTH)
-					if (diff < 0) diff += 1500 * GnssConstants.GPS_L2_WAVELENGTH
-				}
-				l2phrl1psr = diff
+				setL2Phaserange(l1psr_amb,value)
 			}
 
 		var l1Phase: Double
-			get() = l1Phaserange / GnssConstants.GPS_L1_WAVELENGTH
+			get() = getL1Phase(l1psr_amb)
 			set(value) {
-				l1Phaserange = value * GnssConstants.GPS_L1_WAVELENGTH
+				setL1Phase(l1psr_amb,value)
 			}
 
 		var l2Phase: Double
-			get() = l2Phaserange / GnssConstants.GPS_L2_WAVELENGTH
+			get() = getL2Phase(l1psr_amb)
 			set(value) {
-				l2Phaserange = value * GnssConstants.GPS_L2_WAVELENGTH
+				setL2Phase(l1psr_amb,value)
 			}
 
 		companion object : RtcmSatCommonDef_1001_1004<Sat1004>(true, true) {

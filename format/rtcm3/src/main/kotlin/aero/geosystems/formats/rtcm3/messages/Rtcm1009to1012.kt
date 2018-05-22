@@ -58,7 +58,7 @@ abstract class RtcmSatCommonDef_1009_1012<SB : RtcmSatCommon_1009_1012>(val hasa
 
 abstract class RtcmSatCommon_1009_1012(
 		override final val def: RtcmSatCommonDef_1009_1012<*>, bb: ByteBuffer, offset: Int) :
-		Rtcm3v0RtkSatCommon(def.hasL2,def.hasamb,def.hascnr,
+		Rtcm3v0RtkSatCommon(def.hasL2,def.hasamb,def.hascnr,Rtcm3StructDef.LIGHT2MS,
 				def, bb, offset) {
 	override val waveL1 get() = GnssConstants.gloWaveL1(sat_freq_idx - 7)
 	override val waveL2 get() = GnssConstants.gloWaveL2(sat_freq_idx - 7)
@@ -123,26 +123,19 @@ class Rtcm1010(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1009_1012<Rtcm1010.
 		var l1Pseudorange: Double
 			get() = getL1Pseudorange(l1psr_amb)
 			set(value) {
-				val ambig = (value / Rtcm3StructDef.LIGHT2MS).toLong()
-				l1psr_amb_raw = ambig
-				l1psr = value - ambig * Rtcm3StructDef.LIGHT2MS
+				setL1Pseudorange(l1psr_amb, value)
 			}
 
 		var l1Phaserange: Double
-			get() = l1Pseudorange + l1phrl1psr
+			get() = getL1Phaserange(l1psr_amb)
 			set(value) {
-				var diff = value - l1Pseudorange
-				if (diff < l1phrl1psr_def.minDouble || diff > l1phrl1psr_def.maxDouble) {
-					diff %= (1500 * waveL1)
-					if (diff < 0) diff += 1500 * waveL1
-				}
-				l1phrl1psr = diff
+				setL1Phaserange(l1psr_amb,value)
 			}
 
 		var l1Phase: Double
-			get() = l1Phaserange / waveL1
+			get() = getL1Phase(l1psr_amb)
 			set(value) {
-				l1Phaserange = value * waveL1
+				setL1Phase(l1psr_amb,value)
 			}
 
 		companion object : RtcmSatCommonDef_1009_1012<Sat1010>(true, false) {
@@ -152,6 +145,14 @@ class Rtcm1010(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1009_1012<Rtcm1010.
 
 	companion object : RtcmCommonDef_1009_1012<Rtcm1010, Sat1010>(Sat1010.Companion, 1010) {
 		override fun binding(bb: ByteBuffer, structOffset: Int): Rtcm1010 = Rtcm1010(bb, structOffset)
+
+		fun allocate(nsats:Int):Rtcm1010 {
+			val bb0 = ByteBuffer.allocate(minFixedSize())
+			val m0 = Rtcm1010(bb0)
+			m0.num_sat = nsats
+			val bb = ByteBuffer.allocate(byteSize(m0))
+			return Rtcm1010(bb)
+		}
 	}
 }
 
@@ -173,49 +174,37 @@ class Rtcm1012(bb: ByteBuffer, offset: Int = 0) : RtcmCommon_1009_1012<Rtcm1012.
 		var l1Pseudorange: Double
 			get() = getL1Pseudorange(l1psr_amb)
 			set(value) {
-				val ambig = (value / Rtcm3StructDef.LIGHT2MS).toLong()
-				l1psr_amb_raw = ambig
-				l1psr = value - ambig * Rtcm3StructDef.LIGHT2MS
+				setL1Pseudorange(l1psr_amb, value)
 			}
 
 		var l1Phaserange: Double
-			get() = l1Pseudorange + l1phrl1psr
+			get() = getL1Phaserange(l1psr_amb)
 			set(value) {
-				var diff = value - l1Pseudorange
-				if (diff < l1phrl1psr_def.minDouble || diff > l1phrl1psr_def.maxDouble) {
-					diff %= (1500 * waveL1)
-					if (diff < 0) diff += 1500 * waveL1
-				}
-				l1phrl1psr = diff
+				setL1Phaserange(l1psr_amb,value)
 			}
 
 		var l2Pseudorange: Double
-			get() = l1Pseudorange + l2l1psrdiff
+			get() = getL2Pseudorange(l1psr_amb)
 			set(value) {
-				l2l1psrdiff = value - l1Pseudorange
+				setL2Pseudorange(l1psr_amb, value)
 			}
 
 		var l2Phaserange: Double
-			get() = l1Pseudorange + l2phrl1psr
+			get() = getL2Phaserange(l1psr_amb)
 			set(value) {
-				var diff = value - l1Pseudorange
-				if (diff < l2phrl1psr_def!!.minDouble || diff > l2phrl1psr_def.maxDouble) {
-					diff %= (1500 * waveL2)
-					if (diff < 0) diff += 1500 * waveL2
-				}
-				l2phrl1psr = diff
+				setL2Phaserange(l1psr_amb, value)
 			}
 
 		var l1Phase: Double
-			get() = l1Phaserange / waveL1
+			get() = getL1Phase(l1psr_amb)
 			set(value) {
-				l1Phaserange = value * waveL1
+				setL1Phase(l1psr_amb,value)
 			}
 
 		var l2Phase: Double
-			get() = l2Phaserange / waveL2
+			get() = getL2Phase(l1psr_amb)
 			set(value) {
-				l2Phaserange = value * waveL2
+				setL2Phase(l1psr_amb,value)
 			}
 
 		companion object : RtcmSatCommonDef_1009_1012<Sat1012>(true, true) {

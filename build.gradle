@@ -20,7 +20,7 @@ buildscript {
 
 subprojects {
     buildscript {
-        ext.kotlin_version = '1.2.0'
+        ext.kotlin_version = '1.2.30'
         repositories {
             mavenCentral()
         }

@@ -629,7 +629,7 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 		}
 	}
 
-	inner abstract class MsmMaskFixedArrayMember<ARRAY, ARRAYITEM>(val mask_def: BitMaskReturningMember, val bitSize: Int) : Member<ARRAY>(), ReadWriteProperty<StructBinding, ARRAY> {
+	abstract inner class MsmMaskFixedArrayMember<ARRAY, ARRAYITEM>(val mask_def: BitMaskReturningMember, val bitSize: Int) : Member<ARRAY>(), ReadWriteProperty<StructBinding, ARRAY>, MemberWithToRawString {
 		override val pos = MsmMaskFixedArrayPosRef(prev?.pos, this, mAlignment)
 		fun count(binding: StructBinding): Int =
 				pos.count(binding)
@@ -652,6 +652,12 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 
 		abstract fun getItem(index: Int, binding: StructBinding): ARRAYITEM
 		abstract fun setItem(index: Int, binding: StructBinding, value: ARRAYITEM)
+
+		override fun toRawString(binding: StructBinding): String {
+			return (0 until count(binding)).joinToString(prefix="[",postfix = "]") {
+				getULong(it, binding).toString()
+			}
+		}
 	}
 
 	inner class MsmMaskUIntArray(mask_def: BitMaskReturningMember, bitSize: Int) : MsmMaskFixedArrayMember<IntArray, Int>(mask_def, bitSize) {

@@ -73,6 +73,7 @@ abstract class AbstractGnssDecoder<T>(
 		sink: IGnssDataConsumer<T> = NopGnssConsumer
 ) : GnssDecoder<T>(sink) {
 	open val byteOrder: ByteOrder get() = ByteOrder.LITTLE_ENDIAN
+	var currentOffset: Long = 0L
 
 	@Suppress("LeakingThis")
 	protected val headerBuffer = ByteBuffer.allocateDirect(minHeaderLength).order(byteOrder)!!
@@ -112,6 +113,7 @@ abstract class AbstractGnssDecoder<T>(
 				// SYNC
 				while (headerBuffer.position() < syncLength && data.hasRemaining()) {
 					val b = data.get()
+					currentOffset++
 					if (syncByte(headerBuffer.position()) != b) {
 						glen++
 						resetHeader()
@@ -128,6 +130,7 @@ abstract class AbstractGnssDecoder<T>(
 					}
 					val n = minimum(headerBuffer.remaining(), data.remaining())
 					if (n > 0) {
+						currentOffset += n
 						headerBuffer.put(data, n)
 						if (!headerBuffer.hasRemaining()) {
 							if (checkMinimalHeader()) {
@@ -145,6 +148,7 @@ abstract class AbstractGnssDecoder<T>(
 			// REST OF HEADER AND MESSAGE BODY
 			if (!headerBuffer.hasRemaining() && messageBuffer.hasRemaining() && data.hasRemaining()) {
 				val n = minimum(messageBuffer.remaining(),data.remaining())
+				currentOffset += n
 				messageBuffer.put(data,n)
 			}
 			// MESSAGE IS COMPLETE, CHECK CRC

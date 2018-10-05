@@ -3,8 +3,10 @@ package aero.geosystems.formats
 import aero.geosystems.formats.utils.copyToArray
 import aero.geosystems.formats.utils.getOrPut
 import aero.geosystems.formats.utils.subByteBuffer
+import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.text.NumberFormat
 import java.util.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
@@ -168,6 +170,19 @@ open class StructBinding(def_:StructDef<*>, val buffer: ByteBuffer, val structOf
 		val errLongArrayAccessor = errAccessor<LongArray>()
 		val errDoubleArrayAccessor = errAccessor<DoubleArray>()
 		val errBoolArrayAccessor = errAccessor<BooleanArray>()
+
+		fun toRawString(what:Any?):String = when(what) {
+			is String -> what
+			is Double,
+			is Float -> doubleFormatter.format(what)
+			is Enum<*> -> what.ordinal.toString()
+			is StructBinding -> what.toRawString()
+			is Iterable<*> -> what.joinToString(separator=" ",prefix="[",postfix="]") { toRawString(it) }
+			is Sequence<*> -> what.joinToString(separator=" ",prefix="[",postfix="]") { toRawString(it) }
+			is Array<*> -> what.joinToString(separator=" ",prefix="[",postfix="]") { toRawString(it) }
+			is ByteArray -> BigInteger(1,what).toString(16)
+			else -> what.toString()
+		}
 	}
 
 	fun clearCaches() {
@@ -175,6 +190,25 @@ open class StructBinding(def_:StructDef<*>, val buffer: ByteBuffer, val structOf
 		cached_sizes.fill(null)
 		cached_ends.fill(null)
 	}
+
+	override fun toString(): String {
+		return def.members.joinToString { md ->
+			md.getValue(this).toString()
+		}
+	}
+
+	fun toRawString(): String {
+		return def.members.joinToString(separator=" ",prefix="{",postfix="}") { md ->
+			when (md) {
+				is StructDef.MemberWithToRawString -> md.toRawString(this)
+				else -> toRawString(md.getValue(this))
+			}
+		}
+	}
+}
+
+private val doubleFormatter = NumberFormat.getNumberInstance(Locale.ENGLISH).also {
+	it.isGroupingUsed = false
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -272,7 +306,7 @@ abstract class StructDef<out BINDING : StructBinding> {
 		tailMode = false
 	}
 
-	inner abstract class Member<T> : ReadOnlyProperty<StructBinding,T> {
+	abstract inner class Member<T> : ReadOnlyProperty<StructBinding,T> {
 		val mAlignment = this@StructDef.gAlignment
 		abstract val pos: BitRef
 		protected val index by lazy { this@StructDef.members.indexOf(this) }
@@ -294,7 +328,9 @@ abstract class StructDef<out BINDING : StructBinding> {
 			else frontMembers.add(this)
 		}
 	}
-
+	interface MemberWithToRawString {
+		fun toRawString(binding: StructBinding):String
+	}
 
 	protected inline fun <M : Member<*>> tailMember(code: () -> M): M {
 		tailModeOn()
@@ -311,13 +347,13 @@ abstract class StructDef<out BINDING : StructBinding> {
 		return m
 	}
 
-	inner abstract class FixedSizeMember<T>(_bitSize: Int) : Member<T>() {
-		override final val pos = FixedSizeRef(prev?.pos, _bitSize, mAlignment)
+	abstract inner class FixedSizeMember<T>(_bitSize: Int) : Member<T>() {
+		final override val pos = FixedSizeRef(prev?.pos, _bitSize, mAlignment)
 
 		val bitSize = _bitSize
 	}
 
-	inner abstract class NumberMember<T>(bitSize: Int) : FixedSizeMember<T>(bitSize) {
+	abstract inner class NumberMember<T>(bitSize: Int) : FixedSizeMember<T>(bitSize), MemberWithToRawString {
 		val maxSigned = 1L.shl(bitSize - 1) - 1
 		val maxUnsigned = 1L.shl(bitSize) - 1
 		val minSigned = -1L.shl(bitSize - 1)
@@ -332,6 +368,10 @@ abstract class StructDef<out BINDING : StructBinding> {
 
 		fun setValue(i: Long, binding: StructBinding) {
 			writeBits(binding.buffer, i, pos.start(binding), bitSize)
+		}
+
+		override fun toRawString(binding: StructBinding): String {
+			return getUnsigned(binding).toString()
 		}
 	}
 
@@ -459,7 +499,7 @@ abstract class StructDef<out BINDING : StructBinding> {
 		}
 	}
 
-	inner abstract class BitMaskReturningMember() : Member<BitSet>(), ReadWriteProperty<StructBinding, BitSet> {
+	abstract inner class BitMaskReturningMember() : Member<BitSet>(), ReadWriteProperty<StructBinding, BitSet> {
 		override fun setValue(thisRef: StructBinding, property: KProperty<*>, value: BitSet) {
 			setValue(thisRef,value)
 		}

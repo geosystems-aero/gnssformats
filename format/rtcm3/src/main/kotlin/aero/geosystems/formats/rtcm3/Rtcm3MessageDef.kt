@@ -521,7 +521,14 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	 */
 	fun DF103() = BitMember()
 
-	// TODO DF104-DF140
+	// TODO DF104-DF136
+
+	/**
+	 * GPS Fit Interval
+	 */
+	fun DF137() = BitMember()
+
+	// TODO DF138-140
 
 	/**
 	 * Reference-Station Indicator, bit(1)

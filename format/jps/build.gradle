@@ -7,14 +7,8 @@ repositories {
     mavenCentral()
 }
 
-kotlin {
-    experimental {
-        coroutines 'enable'
-    }
-}
-
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile project(':core')
     compile project(':GNSS')
 }

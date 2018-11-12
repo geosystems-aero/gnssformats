@@ -10,6 +10,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/GNSS" />
             <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/format" />
+            <option value="$PROJECT_DIR$/format/jps" />
             <option value="$PROJECT_DIR$/format/rtcm3" />
           </set>
         </option>

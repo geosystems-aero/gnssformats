@@ -6,26 +6,13 @@
  * user guide available at https://docs.gradle.org/3.3/userguide/tutorial_java_projects.html
  */
 group = 'aero.geosystems'
-version = '18.1112'
-buildscript {
-    /*
-    ext.kotlin_version = '1.3.0'
-
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-    */
-}
+version = '18.1114'
 
 // apply plugin: "kotlin"
 
 subprojects {
     buildscript {
-        ext.kotlin_version = '1.3.0'
+        ext.kotlin_version = '1.3.10'
 
         repositories {
             mavenCentral()

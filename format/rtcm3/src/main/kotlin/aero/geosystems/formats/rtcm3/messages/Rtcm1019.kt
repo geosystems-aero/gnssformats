@@ -2,7 +2,10 @@ package aero.geosystems.formats.rtcm3.messages
 
 import aero.geosystems.formats.rtcm3.Rtcm3Message
 import aero.geosystems.formats.rtcm3.Rtcm3MessageDef
+import java.io.PrintStream
 import java.nio.ByteBuffer
+import java.util.*
+import kotlin.math.PI
 
 class Rtcm1019(bb: ByteBuffer, offset: Int = 0) : Rtcm3Message(Companion, bb, offset) {
     val sat_id by sat_id_def
@@ -76,4 +79,59 @@ class Rtcm1019(bb: ByteBuffer, offset: Int = 0) : Rtcm3Message(Companion, bb, of
         val l2_p_data_flag_def = DF103()
         val fit_interval_def = DF137()
     }
+}
+
+fun Rtcm1019.rinexlikeOutput(to: PrintStream) {
+	val toc_s = toc % 60
+	val toc_m = (toc / 60) % 60
+	val toc_h = (toc / 60 / 60) % 24
+	to.println("%2d %2s %2s %2s %2s %2s%5.1f%19.12e%19.12e%19.12e".format(Locale.ENGLISH,
+			sat_id,
+			"y", "m", "d", toc_h, toc_m, toc_s.toDouble(),
+			af0, // s
+			af1, // s/s
+			af2  // s/s^2
+	) + "    // PRN / EPOCH / SV CLK")
+	to.println("   %19.12e%19.12e%19.12e%19.12e".format(Locale.ENGLISH,
+			iode.toDouble(),
+			c_rs, //         m
+			delta_n * PI, // semicircles/s -> rad/s
+			m0 * PI //       semicircles -> rad
+	) + "    //  BROADCAST ORBIT - 1")
+	to.println("   %19.12e%19.12e%19.12e%19.12e".format(Locale.ENGLISH,
+			c_uc, //        rad
+			eccentricity_e,
+			c_us, //        rad
+			a12 //          sqrt m
+	) + "    //  BROADCAST ORBIT - 2")
+	to.println("   %19.12e%19.12e%19.12e%19.12e".format(Locale.ENGLISH,
+			toe.toDouble(), // s
+			c_ic, //           rad
+			omega0 * PI, //    semicircles -> rad
+			c_is // rad
+	) + "    //  BROADCAST ORBIT - 3")
+	to.println("   %19.12e%19.12e%19.12e%19.12e".format(Locale.ENGLISH,
+			i0 * PI, //      semicircles -> rad
+			c_rc, // m
+			omega * PI, //   semicircles -> rad
+			omegadot * PI // semicircles/s -> rad/s
+	) + "    //  BROADCAST ORBIT - 4")
+	to.println("   %19.12e%19.12e%19.12e%19s".format(Locale.ENGLISH,
+			idot * PI, //             semicircles/s -> rad/s
+			code_on_l2.toDouble(),
+			week_number.toDouble(),
+			l2_p_data_flag
+	) + "    //  BROADCAST ORBIT - 5")
+	to.println("   %19.12e%19.12e%19.12e%19.12e".format(Locale.ENGLISH,
+			sv_accuracy.toDouble(), // m
+			sv_health.toDouble(),
+			tgd, //                    s
+			iodc.toDouble()
+	) + "    //  BROADCAST ORBIT - 6")
+	to.println("   %19s%19s%19s%19s".format(Locale.ENGLISH,
+			"?", // s
+			fit_interval,
+			"",
+			""
+	) + "    //  BROADCAST ORBIT - 7")
 }

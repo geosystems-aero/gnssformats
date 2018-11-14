@@ -21,13 +21,14 @@ fun main(args: Array<String>) {
 			if (message!=null) {
 				println(message.toString())
 			}
-			/*when (message?.message_id) {
-				1005,1006 -> {
-					val body = message as RtcmCommon_1005_1006
-					val ant_x = body.ant_x
-					val ant_y = body.ant_y
-					val ant_z = body.ant_z
-					TODO to BLH
+			/*
+			when (message) {
+				is Rtcm1019 -> message.rinexlikeOutput(System.out)
+				is RtcmCommon_1005_1006 -> {
+					val ant_x = message.ant_x
+					val ant_y = message.ant_y
+					val ant_z = message.ant_z
+					// TODO to BLH
 				}
 			}*/
 		}

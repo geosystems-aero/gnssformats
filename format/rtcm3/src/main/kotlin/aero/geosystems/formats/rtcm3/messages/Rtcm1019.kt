@@ -38,7 +38,7 @@ class Rtcm1019(bb: ByteBuffer, offset: Int = 0) : Rtcm3Message(Companion, bb, of
 
     override fun bodyToString(): String {
         return "$sat_id, $week_number, $sv_accuracy, $code_on_l2, $idot, $iode, $toc, $af2, $af1, $af0, $iodc, $c_rs, $delta_n, " +
-                "$m0, $c_uc, $eccentricity_e, $c_us, $a12, $toe, $c_ic, $omega0, $c_is, $i0, $c_rc, $omega, $omegadot, $tgd," +
+                "$m0, $c_uc, $eccentricity_e, $c_us, $a12, $toe, $c_ic, $omega0, $c_is, $i0, $c_rc, $omega, $omegadot, $tgd, " +
                 "$sv_health, $l2_p_data_flag, $fit_interval"
     }
 

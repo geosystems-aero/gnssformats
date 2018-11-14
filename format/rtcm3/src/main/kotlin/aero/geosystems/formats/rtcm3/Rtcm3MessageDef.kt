@@ -424,7 +424,7 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	/**
 	 * GPS af0 See Note 1 2-31 sec, int22
 	 */
-	fun DF084() = LinearFloatMember(false, 22, 1.0 / 1L.shl(22))
+	fun DF084() = LinearFloatMember(false, 22, 1.0 / 1L.shl(31))
 
 	/**
 	 * GPS IODC, 0-1023, uint10
@@ -444,7 +444,7 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	/**
 	 * GPS M_0, 2^-31 semi-circles x int32
 	 */
-	fun DF088() = LinearFloatMember(false, 32, 1.0 / 1L.shl(29))
+	fun DF088() = LinearFloatMember(false, 32, 1.0 / 1L.shl(31))
 
 	/**
 	 * GPS C_uc, 2^-29 rad x int16
@@ -504,7 +504,7 @@ abstract class Rtcm3StructDef<BINDING : StructBinding> : StructDef<BINDING>() {
 	/**
 	 * GPS OMEGADOT (Rate of Right Ascension), 2^-43 semi-circles/sec x int24
 	 */
-	fun DF100() = LinearFloatMember(false, 24, 1.0 / 1L.shl(24))
+	fun DF100() = LinearFloatMember(false, 24, 1.0 / 1L.shl(43))
 
 	/**
 	 * GPS t_GD, 2^-31 sec x int8
